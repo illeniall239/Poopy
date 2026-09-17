@@ -1,0 +1,11 @@
+# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+from typing import Optional
+
+
+def average(numbers: list[float]) -> Optional[float]:
+    if len(numbers) == 0:
+        return None
+    total = 0
+    for i in range(0, len(numbers)):
+        total += numbers[i]
+    return total / len(numbers)

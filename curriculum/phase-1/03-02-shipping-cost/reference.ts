@@ -1,0 +1,12 @@
+// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+export function shippingCost(subtotalCents: number, weightKg: number, express: boolean): number {
+  if (weightKg > 30) return -1;
+  if (subtotalCents >= 5000 && !express && weightKg <= 20) return 0;
+
+  let cost: number;
+  if (weightKg <= 1) cost = 499;
+  else if (weightKg <= 5) cost = 899;
+  else cost = 1499;
+
+  return express ? cost + 1000 : cost;
+}

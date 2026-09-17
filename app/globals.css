@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --ground: #eef1ec;
+  --panel: #fafbf8;
+  --ink: #18201c;
+  --muted: #5b665f;
+  --line: #d3d9d2;
+  --accent: #1f6f5c;
+  --accent-soft: #dcebe5;
+  --warn: #8a5a00;
+  --warn-soft: #f5ead2;
+  --bad: #a33a2b;
+  --bad-soft: #f6e1dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #121714;
+    --panel: #1a201c;
+    --ink: #e4eae5;
+    --muted: #99a69e;
+    --line: #2e3832;
+    --accent: #5fc2a7;
+    --accent-soft: #1e332c;
+    --warn: #e0b45a;
+    --warn-soft: #33291a;
+    --bad: #f08a78;
+    --bad-soft: #3a221e;
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, Consolas, monospace;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+}
+
+@layer components {
+  .panel { @apply rounded-xl border border-line bg-panel; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md border border-line px-3 py-2 text-sm font-semibold transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply border-accent bg-accent text-panel hover:opacity-90; }
+  .field { @apply rounded-md border border-line bg-ground px-3 py-2 text-[15px] text-ink placeholder:text-muted; }
+  .eyebrow { @apply font-mono text-[11px] font-semibold uppercase tracking-widest text-accent; }
+  .chip { @apply inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-semibold; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-accent; }
+}
+
+/* Markdown from curriculum files and Tutor replies */
+.md { line-height: 1.6; font-size: 15px; }
+.md > * + * { margin-top: 0.7em; }
+.md h1, .md h2, .md h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.25; }
+.md h2 { font-size: 1.15rem; margin-top: 1.2em; }
+.md h3 { font-size: 1rem; margin-top: 1em; }
+.md ul { list-style: disc; padding-left: 1.3em; }
+.md ol { list-style: decimal; padding-left: 1.3em; }
+.md li + li { margin-top: 0.25em; }
+.md code { font-family: var(--font-mono); font-size: 0.88em; background: var(--ground); border: 1px solid var(--line); border-radius: 4px; padding: 0.05em 0.3em; }
+.md pre { background: var(--ground); border: 1px solid var(--line); border-radius: 8px; padding: 0.75em 1em; overflow-x: auto; }
+.md pre code { background: none; border: 0; padding: 0; font-size: 13px; }
+.md a { color: var(--accent); text-decoration: underline; }
+.md strong { font-weight: 650; }
