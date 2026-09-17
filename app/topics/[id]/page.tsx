@@ -21,7 +21,7 @@ export default async function TopicPage(props: PageProps<"/topics/[id]">) {
   async function startExercises() {
     "use server";
     await markTeachDone(id);
-    redirect(`/exercises/${topic!.exerciseIds[0]}`);
+    redirect(topic!.exerciseIds.length ? `/exercises/${topic!.exerciseIds[0]}` : "/");
   }
 
   return (
@@ -49,8 +49,15 @@ export default async function TopicPage(props: PageProps<"/topics/[id]">) {
             ))}
           </ul>
         </div>
+        {topic.practice && (
+          <div className="panel grid gap-2 p-5">
+            <p className="eyebrow">Practice in your own editor</p>
+            <p className="text-[15px]">{topic.practice}</p>
+            {topic.sources && <p className="text-xs text-muted">Sources: {topic.sources}</p>}
+          </div>
+        )}
         <div className="panel grid gap-3 p-5">
-          <p className="eyebrow">Then practise</p>
+          <p className="eyebrow">{topic.exerciseIds.length ? "Then practise" : "Finish the lesson"}</p>
           <ul className="grid gap-1.5">
             {topic.exerciseIds.map((exId) => (
               <li key={exId} className="flex items-center justify-between gap-2 text-sm">
@@ -60,7 +67,7 @@ export default async function TopicPage(props: PageProps<"/topics/[id]">) {
             ))}
           </ul>
           <form action={startExercises} className="grid gap-2 border-t border-line pt-3">
-            <button type="submit" className="btn btn-primary">Start exercises</button>
+            <button type="submit" className="btn btn-primary">{topic.exerciseIds.length ? "Start exercises" : "Mark lesson done"}</button>
             <p className="text-xs text-muted">
               {taught ? "Lesson finished. You can still ask questions here." : "Press this when the Tutor says you're ready."}
             </p>

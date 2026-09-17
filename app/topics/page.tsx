@@ -16,7 +16,7 @@ const chip: Record<ExerciseStatus, [string, string]> = {
 export default async function Topics() {
   await connection();
   const today = localToday();
-  const { topics, exercises } = loadCurriculum();
+  const { phases, topics, exercises } = loadCurriculum();
   const topicStates = allTopicStates();
   const states = allExerciseStates();
   const reviews = new Map(allReviews().map((r) => [r.topic_id, r]));
@@ -25,13 +25,16 @@ export default async function Topics() {
     <main className="grid gap-6 px-6 py-8 xl:px-10">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
-          <p className="eyebrow">Curriculum Map · Phase 1</p>
+          <p className="eyebrow">Curriculum Map</p>
           <h1 className="font-display text-4xl font-bold">All topics</h1>
         </div>
-        <p className="text-sm text-muted">Phases 2–8 get their exercises when you reach them. Full map: <code className="font-mono">curriculum/MAP.md</code></p>
+        <p className="text-sm text-muted">{phases.length} phases · {topics.length} topics · {exercises.size} in-app exercises</p>
       </header>
+      {phases.map((phase) => (
+      <section key={phase.number} className="grid gap-3">
+      <h2 className="font-display text-2xl font-semibold"><span className="mr-2 font-mono text-base text-muted">Phase {phase.number}</span>{phase.title}</h2>
       <ol className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-        {topics.map((t) => {
+        {topics.filter((t) => t.phase === phase.number).map((t) => {
           const learned = isTopicLearned(t, topicStates.get(t.id), states, today);
           const review = reviews.get(t.id);
           return (
@@ -49,7 +52,8 @@ export default async function Topics() {
               </div>
               <p className="text-sm text-muted">{t.learnedWhen}</p>
               {review && <p className="font-mono text-xs text-muted">Next review {review.due_date}</p>}
-              <ul className="grid gap-1.5 border-t border-line pt-3">
+              {t.practice && !t.exerciseIds.length && <p className="border-t border-line pt-3 text-sm"><span className="font-semibold">Practice:</span> {t.practice}</p>}
+              {t.exerciseIds.length > 0 && <ul className="grid gap-1.5 border-t border-line pt-3">
                 {t.exerciseIds.map((id) => {
                   const [label, cls] = chip[exerciseStatus(states.get(id), today)];
                   return (
@@ -59,11 +63,13 @@ export default async function Topics() {
                     </li>
                   );
                 })}
-              </ul>
+              </ul>}
             </li>
           );
         })}
       </ol>
+      </section>
+      ))}
     </main>
   );
 }

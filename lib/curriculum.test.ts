@@ -13,11 +13,12 @@ test("parses topic fields and exercise ids", () => {
   assert.deepEqual(t.exerciseIds, ["p1-03-01-leap-year", "p1-03-02-shipping"]);
 });
 
-test("loads the real Phase 1: every topic has 3 exercises with 4 hints and explain-back questions", () => {
+test("loads the real curriculum: Phase 1 topics have 3 exercises; every exercise has 4 hints and explain-back questions", () => {
   const { topics, exercises } = loadCurriculum(join(import.meta.dirname, "..", "curriculum"));
-  assert.equal(topics.length, 15);
-  for (const t of topics) assert.equal(t.exerciseIds.length, 3, t.id);
-  assert.equal(exercises.size, 45);
+  const phase1 = topics.filter((t) => t.phase === 1);
+  assert.equal(phase1.length, 15);
+  for (const t of phase1) assert.equal(t.exerciseIds.length, 3, t.id);
+  assert.ok(exercises.size >= 45);
   for (const ex of exercises.values()) {
     assert.equal(ex.hints.length, 4, ex.id);
     assert.ok(ex.explainBack.length >= 3, ex.id);

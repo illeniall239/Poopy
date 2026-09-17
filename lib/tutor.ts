@@ -28,7 +28,7 @@ export function teachPrompt(topic: Topic, history: Message[]): Prompt {
 Learned when: ${topic.learnedWhen}
 Concepts to draw out (one at a time): ${topic.teach}
 Misconceptions to probe for: ${topic.probe}
-
+${topic.practice ? `Hands-on practice after the lesson (in the Learner's own editor): ${topic.practice}\n` : ""}${topic.sources ? `Official sources to point to: ${topic.sources}\n` : ""}
 This is the "new concept" step of today's Session. Teach the concepts above Socratically: start from a concrete, everyday example and a question the Learner can answer, then build up. Check understanding against the misconceptions. Don't lecture everything at once. When the Learner has shown they understand every concept, tell them they can press "Start exercises".${history.length ? "" : "\n\nOpen the lesson now with your first question."}`;
   return { system: SOCRATIC, messages: [{ role: "user", content: context }, ...toChat(history)] };
 }

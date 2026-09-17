@@ -15,7 +15,7 @@ export const dotClass: Record<ExerciseStatus, string> = {
 
 export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const today = localToday();
-  const { topics, exercises } = loadCurriculum();
+  const { phases, topics, exercises } = loadCurriculum();
   const topicStates = allTopicStates();
   const states = allExerciseStates();
   const learned = topics.filter((t) => isTopicLearned(t, topicStates.get(t.id), states, today)).length;
@@ -40,7 +40,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
       <div className="flex items-start justify-between gap-2 pl-3 pt-2">
         <div className="grid gap-0.5">
           <span className="font-display text-xl font-bold">Poopy</span>
-          <span className="text-xs text-muted">Phase 1 · Problem solving and TypeScript</span>
+          <span className="text-xs text-muted">Phase {current?.phase ?? phases.at(-1)?.number} · {phases.find((p) => p.number === (current?.phase ?? phases.at(-1)?.number))?.title}</span>
         </div>
         <SidebarToggle collapsed={false} />
       </div>
@@ -64,10 +64,17 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
 
       <div className="hidden min-h-0 gap-0.5 lg:grid">
         <p className="eyebrow px-3 pb-1">Curriculum</p>
-        {topics.map((t) => {
+        {topics.map((t, i) => {
+          const phaseStart = i === 0 || topics[i - 1].phase !== t.phase;
           const isLearned = isTopicLearned(t, topicStates.get(t.id), states, today);
           return (
-            <TopicLink key={t.id} href={`/topics/${t.id}`} className="group flex items-start gap-3 rounded-md px-3 py-1.5">
+            <div key={t.id} className="grid">
+            {phaseStart && (
+              <p className="mt-3 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Phase {t.phase} · {phases.find((p) => p.number === t.phase)?.title}
+              </p>
+            )}
+            <TopicLink href={`/topics/${t.id}`} className="group flex items-start gap-3 rounded-md px-3 py-1.5">
               <span className={`w-7 shrink-0 font-mono text-xs ${t.id === current?.id ? "font-bold text-accent" : "text-muted"}`}>{t.id}</span>
               <span className={`min-w-0 flex-1 text-sm leading-snug ${isLearned ? "text-muted line-through decoration-line" : t.id === current?.id ? "font-semibold" : ""}`}>
                 {t.title}
@@ -78,6 +85,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
                 ))}
               </span>
             </TopicLink>
+            </div>
           );
         })}
       </div>

@@ -9,7 +9,7 @@ import {
 const blank = (id: string): ExerciseState => ({
   exercise_id: id, code: "x", hints_shown: 0, worked_example: 0, tests_passed_at: null, clean_pass: 0, explain_passed_at: null, retry_due: null,
 });
-const topic = (n: number, ex: string[]): Topic => ({ id: `1.${n}`, phase: 1, number: n, title: `T${n}`, learnedWhen: "", teach: "", probe: "", exerciseIds: ex });
+const topic = (n: number, ex: string[]): Topic => ({ id: `1.${n}`, phase: 1, number: n, title: `T${n}`, learnedWhen: "", teach: "", probe: "", practice: "", sources: "", exerciseIds: ex });
 const today = "2026-09-17";
 
 test("addDays crosses month ends", () => {
