@@ -333,7 +333,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
                 <button onClick={onRun} disabled={running || !editable} className="btn btn-primary">{running ? "Running tests…" : "Run tests"}</button>
               )}
               {status === "done" && nextExerciseId && <Link href={`/exercises/${nextExerciseId}`} className="btn">Next exercise →</Link>}
-              {status === "done" && <Link href="/" className="btn">Back to Today</Link>}
+              {status === "done" && <Link href="/" className="btn">Back to Home</Link>}
               <span className="text-sm text-muted"><StatusLine status={status} retryDue={initial.retryDue} inline /></span>
               <label className="ml-auto flex items-center gap-2 text-sm text-muted">
                 Language

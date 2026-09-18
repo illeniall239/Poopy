@@ -41,7 +41,6 @@ CREATE TABLE IF NOT EXISTS mistakes (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS sketches (exercise_id TEXT PRIMARY KEY, scene TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS days (date TEXT PRIMARY KEY, exercise_passed INTEGER NOT NULL DEFAULT 0, kept INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE IF NOT EXISTS interviews (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   kind TEXT NOT NULL,
@@ -75,6 +74,7 @@ export function db(): DatabaseSync {
     if (!cols.includes("plan_done_at")) d.exec("ALTER TABLE exercise_state ADD COLUMN plan_done_at TEXT");
     if (!cols.includes("plan_text")) d.exec("ALTER TABLE exercise_state ADD COLUMN plan_text TEXT");
     const topicCols = (d.prepare("PRAGMA table_info(topic_state)").all() as { name: string }[]).map((c) => c.name);
+    d.exec("DROP TABLE IF EXISTS days"); // streaks were removed
     if (!topicCols.includes("practice_passed_at")) d.exec("ALTER TABLE topic_state ADD COLUMN practice_passed_at TEXT");
     g.tutorDb = d;
   }
@@ -135,7 +135,7 @@ export function saveReview(r: Review) {
 
 // Full export for backups: every table as JSON.
 export function exportAll() {
-  const tables = ["settings", "exercise_state", "topic_state", "reviews", "messages", "mistakes", "days", "interviews", "project_reviews", "sketches"];
+  const tables = ["settings", "exercise_state", "topic_state", "reviews", "messages", "mistakes", "interviews", "project_reviews", "sketches"];
   return Object.fromEntries(tables.map((t) => [t, db().prepare(`SELECT * FROM ${t}`).all()]));
 }
 
@@ -157,15 +157,6 @@ export const addMistakeManual = (topicId: string | null, text: string) =>
   db().prepare("INSERT INTO mistakes (topic_id, text, source) VALUES (?, ?, 'you')").run(topicId, text.trim());
 export const updateMistakeText = (id: number, text: string) => db().prepare("UPDATE mistakes SET text = ?, updated_at = datetime('now') WHERE id = ?").run(text.trim(), id);
 export const deleteMistake = (id: number) => db().prepare("DELETE FROM mistakes WHERE id = ?").run(id);
-
-// ---------- Streak days ----------
-export type Day = { date: string; exercise_passed: number; kept: number };
-export const allDays = () => db().prepare("SELECT * FROM days ORDER BY date").all() as Day[];
-export const getDay = (date: string) => db().prepare("SELECT * FROM days WHERE date = ?").get(date) as Day | undefined;
-export function saveDay(date: string, exercisePassed: boolean, kept: boolean) {
-  db().prepare(`INSERT INTO days (date, exercise_passed, kept) VALUES (?, ?, ?)
-    ON CONFLICT(date) DO UPDATE SET exercise_passed = excluded.exercise_passed, kept = excluded.kept`).run(date, exercisePassed ? 1 : 0, kept ? 1 : 0);
-}
 
 // ---------- Interviews ----------
 export type Interview = { id: number; kind: string; language: string | null; started_at: string; ended_at: string | null; code: string | null; feedback: string | null };

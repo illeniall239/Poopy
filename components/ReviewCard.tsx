@@ -69,7 +69,7 @@ export function ReviewCard({ topicId, alreadyDone, question: initialQuestion, an
           <div className="grid gap-2 rounded-md bg-accent-soft p-4">
             <Markdown text={result} />
             <p className="text-sm text-muted">Next review of this topic: {nextDue}.</p>
-            <Link href="/" className="btn justify-self-start">Back to Today</Link>
+            <Link href="/" className="btn justify-self-start">Back to Home</Link>
           </div>
         )}
       </section>

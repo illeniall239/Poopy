@@ -51,3 +51,6 @@ next-env.d.ts
 /AGENTS.md
 /.claude/
 /spikes/
+
+# unfinished curriculum phases (renamed back when their exercises are complete)
+/curriculum/_wip-*/

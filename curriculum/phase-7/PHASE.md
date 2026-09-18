@@ -1,156 +1,224 @@
-# Phase 7 — Python, LLM apps, agents — Portfolio Project 3
+# Phase 7 — Data and math for machine learning
 
-66 hours over about 4 weeks, 12 Topics. At the end the Learner builds a reliable, observable LLM agent service in Python (LangGraph, FastAPI) and integrates it into a TypeScript full-stack app, with evals, tracing and guardrails they can defend.
+About 90 hours over about 7 weeks, 14 Topics. For a Learner who has finished the DSA and full-stack phases and knows Python syntax but has never used the Python data stack. At the end the Learner can load, clean and explore a real dataset with NumPy, pandas and matplotlib, run an honest A/B test, and has every piece of linear algebra, calculus, probability and information theory that Phase 8 (classical ML) and Phase 9 (deep learning) consume, learned code-first and in the order those phases use it.
 
 Every Topic below lists:
-- **Learned when** — the observable ability the Learner must show (plus the standard rule: Explain-back, later Spaced Reviews).
+- **Learned when** — what the Learner must show, on top of the standard rule (Exercises pass without hints, Explain-back, later Spaced Reviews).
 - **Teach** — the concepts the Tutor draws out through questions. The Tutor never lectures them wholesale.
 - **Probe** — misconceptions the Tutor actively tests for during Explain-back and Spaced Reviews.
-- **Practice** — hands-on work in the Learner's own editor and project, not in-app Exercises. Says what to build or break and how the Learner knows it works.
-- **Sources** — the official pages the Tutor teaches against; current on 2026-09-17.
+- **Sources** — the pages the Tutor teaches against; read on 2026-09-18.
+- **Exercises** — folder names under this directory, in order.
+
+Exercise folder layout: `exercise.md` (problem, examples, constraints, Hint Ladder, Explain-back questions), then `starter.py`/`test.py`/`reference.py`. Exercises are Python-only. `numpy`, `pandas`, `matplotlib`, `scikit-learn` and PyTorch CPU are all installed; each exercise says which of them it allows (a "pure Python" exercise allows none, and a test may still use NumPy or pandas to compute the expected values). DataFrame Topics use real pandas: the test builds small DataFrames from literal data, the function takes and returns DataFrames or Series, and the test compares with `pandas.testing` or tolerances. The matplotlib exercise builds a `Figure` under the `Agg` backend and never shows a window. Every exercise is deterministic and fast: a pure function or small class whose numerical answers the test compares with tolerances, anything random takes a seed or a `random.Random`/`numpy.random.Generator` argument, no file or network access, and every test finishes in a few seconds. The reference is only used by `scripts/verify-exercises.mjs` to prove the tests are correct; the Tutor never shows it.
 
 ---
 
-## 1. Python for TypeScript developers
+## 1. NumPy arrays and vectorization
 
-**Learned when:** the Learner translates a small TypeScript module (types, async functions, error handling, a class) into idiomatic typed Python in a uv-managed project and runs it with `uv run`.
+**Learned when:** the Learner replaces a Python loop over numbers with one array expression, predicts the shape and dtype of the result, and explains why the array version is faster.
 
-**Teach:** indentation and blocks, `def`, `snake_case`; `list`/`dict`/`set`/`tuple` vs arrays, objects, Map, Set; comprehensions instead of `map`/`filter`; truthiness, `None`, `is`; f-strings; exceptions with `try`/`except`/`finally` and custom exception classes; type hints: `str | None`, `list[str]`, `TypedDict`, `dataclass`, `Protocol`, `Literal`, and a checker (pyright or mypy) as the `tsc` equivalent; `async def`/`await` and `asyncio` vs Node's event loop; modules and packages, `__init__.py`, relative imports; uv: `uv init`, `uv add`, `uv run`, `uv sync`, `uv lock`, `pyproject.toml`, `uv.lock` in git, `.venv` per project, `uv python` for versions; `ruff` for lint and format; `pytest` basics.
+**Teach:** `ndarray` as a contiguous block plus shape and dtype; creating arrays (`array`, `zeros`, `arange`, `linspace`, `random.default_rng(seed)`); shape, `ndim`, `reshape`, `-1`; indexing and slicing return views, not copies; boolean masks and fancy indexing; elementwise ops and ufuncs; reductions with `axis` (axis 0 collapses rows, leaving per-column results); `keepdims`; vectorization: one C loop instead of many Python steps; broadcasting as the rule that lets a row vector meet a matrix (formalized in Topic 3); float precision (`float32` vs `float64`) and integer overflow in fixed-width dtypes; `np.allclose` for comparing floats.
 
-**Probe:** mutable default arguments; `==` vs `is` for `None`; thinking type hints are enforced at run time; `pip install` into the global interpreter; forgetting `await` returns a coroutine object silently; treating `dict` access like optional chaining.
+**Probe:** mutating a slice and being surprised the original changed; `axis=0` read as "along a row"; comparing float arrays with `==`; a Python `for` loop over array rows called "vectorized"; assuming integer arrays grow like Python ints instead of overflowing; `reshape` believed to move data rather than reinterpret it.
 
-**Practice:** Create a uv project and port the Phase 1 `parse-command` and `retry` exercises to typed Python with pytest tests and a pyright check. It works when `uv run pytest` and `uv run pyright` pass on a fresh clone with only `uv sync`, and the Learner can explain every line of `pyproject.toml`.
+**Sources:** https://d2l.ai/ (ch 2 preliminaries), https://madewithml.com/, https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
 
-**Sources:** https://docs.astral.sh/uv/guides/projects/; https://docs.python.org/3/tutorial/index.html; https://docs.python.org/3/library/typing.html
+**Exercises:**
+- `01-01-column-stats` — per-column mean, standard deviation, min and max of a 2-D array with one reduction per statistic and no Python loops.
+- `01-02-mask-and-replace` — replace every value more than k standard deviations from its column mean with that column's median, using boolean masks only.
+- `01-03-pairwise-distances` — the full n×m matrix of Euclidean distances between two point sets with no Python loops, fast for 2000×2000 and equal to a loop version within tolerance.
 
-## 2. FastAPI basics
+## 2. Vectors, dot product, norms
 
-**Learned when:** the Learner builds a small FastAPI service with typed request and response models, validation errors, a streaming endpoint and auto-generated OpenAPI docs, and maps each piece to its Express/Zod equivalent.
+**Learned when:** the Learner computes a dot product by hand, explains it as "how much one vector points along another", and picks cosine similarity or Euclidean distance for a given task with a reason.
 
-**Teach:** `app = FastAPI()`, path operation decorators `@app.get`/`@app.post`, path and query parameters typed in the signature; Pydantic models for bodies (the Zod of Python): validation, `model_dump`, 422 on failure; `response_model`; dependencies (`Depends`) for auth and shared resources; `async def` handlers and when a sync `def` is fine; `HTTPException`; `StreamingResponse` with `text/event-stream` for SSE; `fastapi dev main.py` for development, `fastapi run` or uvicorn in production; `/docs` and `/openapi.json` for free; settings from environment with `pydantic-settings`; CORS middleware; testing with `TestClient`.
+**Teach:** a vector as a list of numbers and as an arrow; in ML a vector is usually one feature row; addition and scalar multiplication; dot product as sum of products and as |a||b|cos θ; L1 and L2 norms, unit vectors; Euclidean distance; cosine similarity ignores magnitude, distance does not; orthogonality means dot product zero; projection of a onto b; shape and dimension; the same operations in pure Python and as `np.dot`/`np.linalg.norm`.
 
-**Probe:** doing blocking I/O inside `async def`; returning a dict where a model was promised; reading env vars all over instead of one settings object; skipping `response_model` and leaking fields; thinking `/docs` replaces writing a contract on purpose.
+**Probe:** dot product confused with elementwise multiplication; cosine similarity of 1 read as "identical vectors"; claiming distance and cosine always rank neighbors the same way; a norm of a difference read as a norm difference; the zero vector fed to cosine similarity without a guard.
 
-**Practice:** Build `agent-service` with `GET /health`, `POST /chat` (Pydantic body, echo response for now), an SSE endpoint that streams five numbered events, and a `Depends` that checks a shared secret header. It works when `/docs` shows the schemas, a bad body returns a 422 listing the field, and `curl -N` shows the events arriving one by one.
+**Sources:** https://mml-book.github.io/ (ch 2–3), https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
 
-**Sources:** https://fastapi.tiangolo.com/tutorial/first-steps/; https://fastapi.tiangolo.com/tutorial/body/; https://fastapi.tiangolo.com/advanced/custom-response/
+**Exercises:**
+- `02-01-dot-and-norms` — `dot`, `norm(v, p)` for p = 1 and 2, and `cosine_similarity`, all raising on length mismatch, in pure Python.
+- `02-02-nearest-vector` — index of the nearest vector to a query by cosine and by Euclidean distance, with a test set where the two disagree.
+- `02-03-project-onto` — the projection of a onto b and the leftover orthogonal component, with the test checking the two parts add back up and are orthogonal.
 
-## 3. LLM API fundamentals: messages, tokens, streaming, structured output, prompt caching
+## 3. Matrices, matrix multiplication and broadcasting
 
-**Learned when:** the Learner calls the Claude Messages API from Python with a system prompt and multi-turn messages, streams the reply to a terminal, gets validated JSON back with a schema, and shows a cache hit in the usage numbers.
+**Learned when:** the Learner predicts the output shape of any matmul or broadcast, or says why it fails, and explains `Xw + b` as "one dot product per example, then a bias added by broadcasting".
 
-**Teach:** the Messages API shape: `model`, `max_tokens`, `system`, `messages` with `role` and content blocks, `stop_reason`, `usage`; tokens: cost and context limits, `count_tokens` before sending, why long histories need trimming; temperature; streaming: `stream=True` gives server-sent events (`message_start`, `content_block_start`, `content_block_delta` with `text_delta`/`input_json_delta`, `message_delta`, `message_stop`), the SDK's `client.messages.stream()` helper; structured output: `output_config={"format": {"type": "json_schema", "schema": ...}}` for the response (the older `output_format` is replaced), and `strict: true` on tool definitions; prompt caching: `cache_control: {"type": "ephemeral"}` on the last stable block (or at the top level for automatic caching), minimum cacheable size per model, 5-minute default TTL or `ttl: "1h"`, reading `cache_creation_input_tokens` and `cache_read_input_tokens`; ordering: tools, system, then messages, with the changing part last; handling errors and rate limits with retries in the SDK; keys from the environment only.
+**Teach:** matrix shape m×n; matmul rule (m×n)(n×p) → (m×p); row·column view and "many dot products at once"; matmul as a linear transformation of each row; transpose; identity; elementwise (Hadamard) product vs matmul; `A*B` vs `A@B` in NumPy; a batch of examples as matrix X with rows = examples; `Xw + b`; NumPy broadcasting rules: align shapes from the right, dimensions must be equal or 1; the bias vector reaching every row through broadcasting; silent bugs when a (n,) meets a (n,1); matmul is not commutative; cost of matmul is O(mnp).
 
-**Probe:** putting the timestamp before the cache breakpoint and wondering why nothing caches; parsing JSON out of prose instead of asking for a schema; sending the whole history forever; treating the model's token count as characters; logging full prompts with user data; hard-coding the API key.
+**Probe:** `A*B` used for matmul; assuming `AB = BA`; a (3,) and (3,1) broadcast into (3,3) without noticing; reading `X @ w` with `w` a column vs a 1-D array; transposing a square matrix and thinking nothing changed; calling broadcasting "copying the data".
 
-**Practice:** In `agent-service`, implement `/chat` for real: a cached system prompt, conversation history in memory keyed by a session id, streaming over SSE to the client, and a `/extract` endpoint that returns a Pydantic-validated object via `output_config`. It works when the second request's usage shows `cache_read_input_tokens > 0`, the stream arrives token by token in `curl -N`, and a malformed extraction is impossible by construction.
+**Sources:** https://mml-book.github.io/ (ch 2), https://d2l.ai/ (ch 2 preliminaries), https://course.fast.ai/ (lesson 11, matrix multiplication)
 
-**Sources:** https://platform.claude.com/docs/en/api/messages; https://platform.claude.com/docs/en/build-with-claude/streaming; https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+**Exercises:**
+- `03-01-matmul-lists` — matmul and transpose on lists of lists with a shape-mismatch error, checked against NumPy.
+- `03-02-broadcast-shape` — NumPy's broadcasting rules on shape tuples: return the result shape or raise, covering leading-dimension padding and size-1 stretching.
+- `03-03-affine-batch` — `XW + b` for a batch of rows both in pure Python and in NumPy, with the two agreeing and the shape of every intermediate asserted.
 
-## 4. Prompt and context engineering; evaluating outputs
+## 4. Linear systems, inverse, determinant
 
-**Learned when:** the Learner improves a prompt by measurement, not taste: a small labeled dataset, a scoring function, a before/after number, and a written note of what changed and why.
+**Learned when:** the Learner solves a 3×3 system by elimination, explains what "XᵀX is singular" will mean for least squares, and says why code should call a solver instead of computing an inverse.
 
-**Teach:** the system prompt as a role, rules and output contract; be specific, give examples (few-shot), state the format; ordering: static instructions first, variable context, then the question; context engineering: what goes in the window (retrieved docs, tool results, summaries), what gets trimmed, and how to keep the stable prefix cacheable; asking for reasoning before answers when it helps; XML-style tags to separate sections; evaluation: build a dataset of 20–50 inputs with expected outputs or rubrics, score with exact match, code checks, or an LLM judge with a rubric, run it on every prompt change; separating "prompt bugs" from "model limits"; version prompts in git; cost and latency as metrics next to quality.
+**Teach:** a system Ax = b as "find the weights that combine the columns of A into b"; Gaussian elimination with partial pivoting; back substitution; inverse exists iff det ≠ 0; determinant as signed volume scaling, computed from the elimination pivots; rank and linear dependence; a determinant near zero means ill-conditioned, not merely small numbers; why explicit inverses are numerically worse than `np.linalg.solve`; `np.linalg.solve`, `np.linalg.inv`, `np.linalg.matrix_rank`; O(n³) cost.
 
-**Probe:** changing three things at once and eyeballing one example; a test set of the same five prompts the Learner wrote the prompt against; an LLM judge with no rubric; putting user input where instructions go (the injection seam, Topic 10); "it worked in the playground" as evidence.
+**Probe:** computing `inv(A) @ b` when `solve(A, b)` is available; "det is small so the matrix is nearly singular" without scaling in mind; elimination without pivoting dividing by a tiny pivot; a duplicated feature column not recognized as a rank drop; belief that every square system has exactly one solution.
 
-**Practice:** For `/extract`, write a 30-case eval set (inputs plus expected fields), a pytest that scores field accuracy, and iterate the prompt three times recording the score each time in `evals/README.md`. It works when the score is reproducible run to run within noise and the final prompt beats the first measurably.
+**Sources:** https://mml-book.github.io/ (ch 2), https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
 
-**Sources:** https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview; https://platform.claude.com/docs/en/build-with-claude/context-windows; https://platform.claude.com/docs/en/test-and-evaluate/develop-tests
+**Exercises:**
+- `04-01-determinant` — determinant of an n×n matrix via elimination, matching `np.linalg.det` within tolerance including sign.
+- `04-02-solve-gaussian` — solve Ax = b with partial pivoting, raising on a singular system, matching `np.linalg.solve`.
+- `04-03-matrix-rank` — rank via row echelon form with a tolerance, plus `is_singular`, correct on a matrix with a duplicated column and on floating-point near-dependence.
 
-## 5. Tool use (function calling)
+## 5. pandas DataFrames and loading data
 
-**Learned when:** the Learner writes the agent loop by hand: define tools with JSON Schema, run the model, execute `tool_use` blocks, return `tool_result` blocks, repeat until `stop_reason` is `end_turn`, with limits and error handling.
+**Learned when:** the Learner loads a CSV, JSON and Parquet file into a DataFrame, answers a question with a select–filter–groupby–aggregate chain, joins two tables, and explains what each step does row by row.
 
-**Teach:** a tool is a name, a description the model reads, and an `input_schema`; the model never runs code, it asks: `stop_reason: "tool_use"` with `tool_use` blocks (`id`, `name`, `input`); the app runs the function and replies with a user message of `tool_result` blocks (`tool_use_id`, `content`, `is_error`); parallel tool calls and `tool_choice` (`auto`, `any`, a specific tool, `disable_parallel_tool_use`); `strict: true` for guaranteed schemas; the loop with an iteration cap, timeouts, and a token budget; tool descriptions as the main lever for good calls; tool results as untrusted input; keeping tool definitions before the cache breakpoint; the SDK's tool runner as the packaged version of the loop, after writing it by hand once.
+**Teach:** `Series` and `DataFrame` as labeled columns over NumPy arrays; index vs columns; `read_csv`, `read_json`, `read_parquet` and when each format is used (CSV: universal, untyped; JSON: nested, from APIs; Parquet: columnar, typed, compressed); dtype inference and its failures (numbers as strings, dates); `head`, `info`, `describe`, `value_counts`; selection with `[]`, `loc`, `iloc`, boolean filters; `groupby` then aggregate; `merge` (inner/left/outer) and one-to-many blow-ups; `sort_values`; missing values as `NaN`, `isna`, `fillna`, `dropna`; `apply` vs vectorized column ops; chained-assignment warnings and copies; writing back with `to_csv`/`to_parquet`; data sources beyond files: SQL queries into a DataFrame, API responses.
 
-**Probe:** letting the model "call" a tool by writing text; forgetting to send back the assistant's `tool_use` message before the `tool_result`; no cap on the loop; a tool that returns raw HTML pages of context; trusting a tool's output as instructions; tools with vague descriptions and then blaming the model.
+**Probe:** `df[df.col > 0]` read as mutating `df`; `loc` and `iloc` used interchangeably; a left join that multiplied rows blamed on pandas; `apply` with a Python function called vectorized; `NaN == NaN` expected to be true; choosing CSV for a 10 GB typed table; forgetting that `groupby` drops rows whose key is missing.
 
-**Practice:** Add two tools to `agent-service` (`search_items` over the Phase 3 API and `get_weather` or a calculator), implement the loop with a five-iteration cap and per-call timeouts, and log every tool call with arguments and duration. It works when a question needing two tools completes in one `/chat` call, a tool that throws produces an `is_error` result the model recovers from, and the loop stops at the cap with a clear message.
+**Sources:** https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content, https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/data-analyst/content, https://madewithml.com/
 
-**Sources:** https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+**Exercises:**
+- `05-01-load-csv-typed` — `load_typed_csv(text, date_columns)` reads CSV text with `pd.read_csv` and fixes dtype inference: strips `$` and thousands separators from numeric columns, parses date columns to `datetime64`, and turns empty, `NA` and `n/a` cells into `NaN`.
+- `05-02-group-aggregate` — `revenue_by_region(orders)` as a filter–groupby–aggregate chain (paid orders only; count, revenue and mean order value per region, sorted by revenue) and `share_by_status(orders)` from normalized `value_counts`, with the test showing a `NaN` region is dropped by `groupby`.
+- `05-03-join-records` — `enrich_orders(orders, customers, how)` with `merge` (inner or left on `customer_id`, one-to-many duplication and `NaN` fill checked) and `orders_per_customer(orders, customers)` counting zero for customers with no orders.
 
-## 6. Model Context Protocol (MCP): building a server, using one from a client
+## 6. Visualization with matplotlib
 
-**Learned when:** the Learner builds an MCP server exposing two tools and a resource over stdio, tests it from an MCP host (Claude Desktop or Claude Code), then connects to it from their own client code, and explains what MCP standardizes that plain tool use did not.
+**Learned when:** the Learner picks the right chart for a question (distribution, relationship, trend, comparison), builds it with the `Figure`/`Axes` API with labeled axes, and reads a histogram, scatter and box plot back into a claim about the data.
 
-**Teach:** the problem: every app re-implementing every integration; MCP roles: host (the LLM app), client (a connector inside it), server (the capability); JSON-RPC messages; per-request capability negotiation carried in `_meta` (the current spec, 2026-07-28, is stateless per request; earlier revisions used an `initialize` handshake); server features: tools (model calls), resources (data by URI), prompts (templates); client feature: elicitation (server asks the user for input); sampling and roots are deprecated in the current spec, so servers integrate with LLM APIs directly; transports: stdio for local subprocess servers, Streamable HTTP for remote ones; Python SDK: `from mcp.server import MCPServer`, `mcp = MCPServer("name")`, `@mcp.tool()` on typed functions with docstrings, `mcp.run(transport="stdio")`; TypeScript SDK: `McpServer` and `StdioServerTransport` from `@modelcontextprotocol/server`, `registerTool` with a Zod schema; wiring into a host via `mcpServers` config; tool descriptions are untrusted text from the host's point of view; the MCP connector in the Claude API for remote servers.
+**Teach:** `fig, ax = plt.subplots()`; the Axes object owns the plot; `ax.plot`, `ax.scatter`, `ax.hist`, `ax.bar`, `ax.boxplot`, `ax.imshow` for heatmaps; labels, titles, legends; log scales for skewed data; chart choice: histogram for one distribution, scatter for two numeric columns, line for order or time, bar for categories, box plot for comparing groups; how a histogram's bin count changes the story; box plot parts (quartiles, IQR, whiskers at 1.5·IQR, outliers); correlation heatmaps; small multiples; loss curves as the DL diagnostic chart; saving with `savefig`; seaborn as a thin layer over matplotlib.
 
-**Probe:** logging to stdout in a stdio server and corrupting the protocol; thinking MCP replaces the agent loop; building sampling or roots into a new server; exposing a "run any SQL" tool; confusing resources with tools; trusting a third-party server's tool descriptions.
+**Probe:** a line chart for unordered categories; a histogram with 3 bins used to claim "no outliers"; axis without units or label; the box plot's box read as the range; a truncated y-axis exaggerating a difference; treating a scatter with correlation as showing cause.
 
-**Practice:** Build `items-mcp` in Python exposing `search_items` and `get_item` tools plus an `items://recent` resource backed by the Phase 3 API, register it in Claude Desktop or Claude Code and use it in a conversation; then call it from `agent-service` with the MCP client SDK and route its tools into the Topic 5 loop. It works when the host lists the tools, a chat question triggers the tool with correct arguments, and the same server answers through the Learner's own client.
+**Sources:** https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/data-analyst/content, https://developers.google.com/machine-learning/guides (Good Data Analysis)
 
-**Sources:** https://modelcontextprotocol.io/specification/latest; https://modelcontextprotocol.io/docs/develop/build-server; https://modelcontextprotocol.io/docs/develop/build-client
+**Exercises:**
+- `06-01-histogram-counts` — bin counts and edges for a list of values in k equal-width bins, matching `np.histogram` including the closed last edge.
+- `06-02-boxplot-summary` — quartiles, IQR, whisker ends and outliers for a sample exactly as a box plot computes them.
+- `06-03-plot-learning-curves` — (matplotlib) build a `Figure` with train and validation loss lines, axis labels and a legend; the test reads the line data and labels back from the `Axes`.
 
-## 7. Retrieval-augmented generation: embeddings, chunking, vector search with pgvector
+## 7. EDA, data cleaning and data quality
 
-**Learned when:** the Learner builds a RAG pipeline end to end (chunk, embed, store in Postgres with pgvector, retrieve top-k, answer with citations) and measures retrieval quality on a small labeled set before tuning chunk size or k.
+**Learned when:** the Learner takes an unfamiliar table through a written EDA checklist, finds its missing values, duplicates, outliers and suspicious columns, and fixes them without leaking information from the test rows.
 
-**Teach:** why RAG: knowledge the model lacks, freshness, citations, smaller prompts; embeddings as vectors where distance means similarity; Anthropic has no embedding model, so use a provider (Voyage AI is the documented option; any provider with the same `embed(texts)` shape works) with `input_type` query vs document; chunking: by structure (headings, paragraphs) with overlap, size in tokens, metadata (source, title, position); pgvector: `CREATE EXTENSION vector`, a `vector(1024)` column, cosine distance `<=>` (L2 `<->`, inner product `<#>`), an HNSW index for approximate search, filtering by metadata in the same query; hybrid search with Postgres full-text as a cheap boost; retrieval eval: for 20 questions, is the right chunk in the top k (recall@k); the answer prompt: retrieved chunks with ids, instruction to cite and to say "not found"; reranking as the next step; re-embedding when the model changes (version the column).
+**Teach:** the EDA loop: question, look, summarize, plot, doubt; descriptive statistics (mean vs median, std, skewness, kurtosis) and which are robust; missing data: mechanism (missing at random or not), rates per column, imputation (median, mode, constant plus an indicator) fit on the training rows only; duplicates and near-duplicates; outliers by z-score or IQR and the decision to drop, cap or keep; inconsistent categories and units; constant and ID-like columns; class balance; train/test distribution shift; data traps: sampling bias, survivorship, Simpson's paradox, leakage columns that encode the label; keeping a data-quality report as an artifact.
 
-**Probe:** chunking by fixed character count through the middle of tables; comparing embeddings from different models; no index and calling it "fast enough" on 100 rows; k=20 chunks stuffed into the prompt; skipping retrieval eval and tuning the generation prompt instead; storing vectors with no reference to the source.
+**Probe:** imputing with the mean of the whole dataset before splitting; dropping every row with any missing value without checking how many go; an outlier removed because it is inconvenient; an ID column left in as a feature; a column correlated 0.99 with the label welcomed rather than suspected; skewed data summarized by its mean.
 
-**Practice:** Ingest the Learner's own Phase 3–6 READMEs and decision logs into a `documents`/`chunks` schema with pgvector (Drizzle or SQL migrations), expose `/ask` in `agent-service` that retrieves top 5 and answers with chunk citations, and write a 20-question recall@5 eval. It works when recall@5 is measured before and after changing chunk size, `EXPLAIN` shows the HNSW index in use, and an off-topic question gets "not found in the documents".
+**Sources:** https://developers.google.com/machine-learning/guides (Good Data Analysis, Data Traps), https://madewithml.com/ (exploratory data analysis), https://fullstackdeeplearning.com/course/2022/ (lecture 4, data management)
 
-**Sources:** https://github.com/pgvector/pgvector; https://platform.claude.com/docs/en/build-with-claude/embeddings
+**Exercises:**
+- `07-01-describe-column` — `describe_column(s)` returns a `Series` of count, missing count, mean, median, std, skewness, min and max for a numeric `Series` containing `NaN`, matching NumPy on the non-missing values within tolerance.
+- `07-02-imputer-and-outliers` — an `Imputer` class with `fit(train)`/`transform(df)` over DataFrames that fills `NaN` with the train medians and adds `<col>_missing` indicator columns without mutating its input, plus `iqr_outlier_mask(df, k)` returning a boolean DataFrame.
+- `07-03-data-quality-report` — `quality_report(train, test, k)` over DataFrames: duplicate row count, missing rate per column as a `Series`, constant columns, ID-like columns and numeric columns whose test mean drifts more than k train standard deviations from the train mean.
 
-## 8. LangChain agents: `create_agent` and middleware
+## 8. Probability for ML
 
-**Learned when:** the Learner rebuilds the Topic 5 loop with LangChain v1's `create_agent`, adds built-in and custom middleware, and explains what the framework does for them and what it hides.
+**Learned when:** the Learner interprets a model output of 0.8 as a probability, computes an expectation and variance from a distribution, applies Bayes' rule to a base-rate problem, and samples from a categorical distribution reproducibly.
 
-**Teach:** `from langchain.agents import create_agent`; `create_agent(model="anthropic:claude-...", tools=[...], system_prompt=..., middleware=[...], response_format=PydanticModel, checkpointer=InMemorySaver())`; tools as plain typed functions or `@tool`; `agent.invoke({"messages": [...]}, config={"configurable": {"thread_id": ...}})` and streaming; the agent as "model + harness": the harness is middleware around each model and tool call; built-in middleware: `SummarizationMiddleware` (trim long histories), `HumanInTheLoopMiddleware` (approve tool calls), `ModelCallLimitMiddleware` and tool-call limits, `ToolRetryMiddleware`, `ModelFallbackMiddleware`, PII detection; custom middleware via decorators `@before_agent`, `@before_model`, `@after_model`, `@after_agent`, `@wrap_model_call`, `@wrap_tool_call`, `@dynamic_prompt`, or an `AgentMiddleware` subclass; where limits, logging and guardrails belong (middleware, not the prompt); the same graph underneath is LangGraph (Topic 9).
+**Teach:** random variable; discrete vs continuous; PMF vs PDF and why a density can exceed 1; Bernoulli, categorical, uniform, Gaussian; expectation as a probability-weighted average; variance and standard deviation; sample vs population variance (`ddof`); joint, marginal and conditional probability; independence; Bayes' rule and the base-rate fallacy; sampling with a seeded generator; law of large numbers as "frequencies converge"; a model's probability output vs a calibrated probability.
 
-**Probe:** stuffing rate limits and safety rules into the system prompt; thinking `create_agent` removes the need to understand the loop; a `thread_id` shared by all users; letting an agent run with no call limit; middleware that mutates state without returning it.
+**Probe:** P(A|B) swapped with P(B|A); a PDF value read as a probability; "variance is the average deviation"; independence assumed because two things are unrelated in the story; a softmax output taken as calibrated; expecting a seeded sampler to give exact frequencies rather than approximate ones.
 
-**Practice:** Replace the hand-written loop in `agent-service` with `create_agent` using the same two tools, add `ModelCallLimitMiddleware`, `SummarizationMiddleware`, a custom `@wrap_tool_call` that logs and times every tool, and a `@dynamic_prompt` that injects the current user's name. It works when the Topic 4 eval set scores the same or better, a runaway prompt stops at the call limit, and a 40-turn conversation stays under the token budget thanks to summarization.
+**Sources:** https://mml-book.github.io/ (ch 6), https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
 
-**Sources:** https://docs.langchain.com/oss/python/langchain/agents; https://docs.langchain.com/oss/python/langchain/middleware; https://docs.langchain.com/oss/python/langchain/middleware/custom
+**Exercises:**
+- `08-01-bayes-rule` — `bayes(prior, likelihood, evidence)` and a `posterior_positive_test(prevalence, sensitivity, specificity)` word problem in pure Python.
+- `08-02-moments-and-pdfs` — `mean`, `variance(sample, ddof)`, `expectation(values, probs)`, `gaussian_pdf` and `bernoulli_pmf`, checked against NumPy and closed forms.
+- `08-03-sample-categorical` — a seeded categorical sampler over a probability list, with empirical frequencies within tolerance of the probabilities after 10 000 draws and rejecting probabilities that do not sum to 1.
 
-## 9. LangGraph: state, nodes, edges, checkpoints, memory, human-in-the-loop
+## 9. Inferential statistics and A/B testing
 
-**Learned when:** the Learner designs a multi-step workflow as an explicit graph (typed state, nodes, conditional edges), persists it with a Postgres checkpointer so it survives restarts, and pauses it for human approval with `interrupt`.
+**Learned when:** the Learner runs an A/B test end to end (sample size, test statistic, p-value, confidence interval), states what the p-value does and does not mean, and explains why a correlation in observational data is not a cause.
 
-**Teach:** when a fixed loop is not enough: branching, retries with different strategies, parallel steps, approvals; `StateGraph` with a `TypedDict` state and reducers (`Annotated[list, add_messages]`); nodes as functions returning partial state; `add_edge`, `add_conditional_edges` with a routing function, `START`/`END`; `graph.compile(checkpointer=...)`: `InMemorySaver` for dev, `PostgresSaver` for real; `thread_id` in `config` as the conversation/run key, state history and time travel; short-term memory (the thread) vs long-term memory (`Store`, keyed by user, searchable); human-in-the-loop: `interrupt(payload)` inside a node stops the run, the client resumes with `Command(resume=value)`; `Command` for routing plus state update from a node; streaming node outputs and tokens; visualizing the graph; testing nodes in isolation.
+**Teach:** population vs sample; sampling distribution and standard error; confidence interval for a mean and for a proportion; null and alternative hypothesis; test statistic, p-value, significance level, type I and II errors and power; z-test for two proportions (the A/B test), Welch's t-test idea; the normal CDF from `math.erfc`; sample-size planning from a minimum detectable effect; peeking and multiple comparisons; permutation tests and the bootstrap as compute-instead-of-formula methods; Pearson and Spearman correlation; correlation vs causation, confounders, randomization as the fix; practical vs statistical significance.
 
-**Probe:** putting everything in one node; state as a bare dict with no reducer so messages get overwritten; forgetting the checkpointer and losing the interrupt; a `thread_id` that is not unique per user and conversation; resuming an interrupt by re-invoking with new input instead of `Command(resume=...)`; treating long-term memory as a place to dump every message.
+**Probe:** "p = 0.03 means a 97% chance B is better"; stopping the test as soon as p dips below 0.05; a 95% CI read as "95% of the data lies here"; correlation of 0.9 called a strong cause; running 20 metrics and reporting the one that hit significance; using a t-test on heavily skewed data with n = 5 without concern.
 
-**Practice:** Build a "request refund" (or similar) workflow in `agent-service`: classify → gather details with tools → if amount above a threshold, `interrupt` for approval → execute → summarize, with `PostgresSaver` on the project's Postgres and a `/runs/{thread_id}/resume` endpoint. It works when restarting the service mid-interrupt and then resuming completes the run, the state history shows every step, and the graph diagram in the README matches the code.
+**Sources:** https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/data-analyst/content, https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/ai-data-scientist/content
 
-**Sources:** https://docs.langchain.com/oss/python/langgraph/graph-api; https://docs.langchain.com/oss/python/langgraph/persistence; https://docs.langchain.com/oss/python/langgraph/interrupts
+**Exercises:**
+- `09-01-correlation` — Pearson r and Spearman rank correlation with average ranks for ties, in pure Python, matching NumPy.
+- `09-02-confidence-intervals` — normal-approximation confidence intervals for a mean and a proportion at a given z, and the sample size needed for a target margin of error.
+- `09-03-ab-test` — two-proportion z-test returning the statistic and two-sided p-value via `math.erfc`, plus a seeded permutation test and bootstrap interval for a difference in means.
 
-## 10. Agent reliability: evals and tracing, guardrails, OWASP LLM Top 10 2025, cost and latency
+## 10. Derivatives and the chain rule
 
-**Learned when:** the Learner can show, for the agent, a trace of one run, an eval run with a score history, a guardrail that stops a prompt-injection attempt, and a per-request cost and latency number, and explains which OWASP LLM risks each control addresses.
+**Learned when:** the Learner differentiates `sigmoid(w*x + b)` with respect to w by hand, checks it with a central difference, and explains why numeric derivatives are for checking, not training.
 
-**Teach:** tracing: LangSmith (`LANGSMITH_TRACING=true` plus API key traces LangChain/LangGraph automatically) or Langfuse (`CallbackHandler` in `config["callbacks"]`, `@observe`, self-hostable, OpenTelemetry-based); what a trace shows: every model call, tool call, tokens, latency, errors; evals as CI: datasets, evaluators (code, LLM-as-judge with a rubric), `evaluate()` in LangSmith or Langfuse datasets, regression on every prompt or graph change; OWASP Top 10 for LLM Applications 2025: LLM01 Prompt Injection (direct and indirect via tool results and retrieved documents), LLM06 Excessive Agency (least-privilege tools, approval for destructive actions), LLM10 Unbounded Consumption (limits on calls, tokens, time, cost per user), plus LLM02 Sensitive Information Disclosure and LLM05 Improper Output Handling (never render or execute model output unescaped); guardrails: input classification, tool allow-lists per user, output validation with schemas, `HumanInTheLoopMiddleware` for risky tools, rate limits from Phase 6; cost and latency: tokens per request, cache hit rate, p95, model choice per step (small model for routing, larger for answers), streaming for perceived latency; alerting on failure rate and cost.
+**Teach:** derivative as slope and as best local linear approximation; derivatives of x^n, e^x, log x, sigmoid, tanh, relu; product rule; chain rule as "multiply the local derivatives along the path"; central difference `(f(x+h) − f(x−h)) / 2h` and how the error shrinks with h until float noise takes over; sigmoid' = σ(1−σ), tanh' = 1 − tanh²; relu's kink at 0 and the subgradient convention; why numeric differentiation is too slow and imprecise for millions of parameters.
 
-**Probe:** "the system prompt says to ignore injections" as the defense; a tool that can delete anything exposed to every user; no per-user cost ceiling; treating a passing eval on 10 cases as proof; tracing off in production "for privacy" with no alternative; measuring average latency and not p95.
+**Probe:** chain rule terms added instead of multiplied; the forward difference used and the error blamed on floats; `h = 1e-12` "for more precision"; relu declared non-differentiable and therefore unusable; the derivative of a composition evaluated at the wrong inner point.
 
-**Practice:** Turn on tracing for `agent-service`, add a red-team eval set of 15 injection and abuse prompts (including one hidden in a retrieved document and one in a tool result), implement a per-user token and call budget plus a tool allow-list, and record cost and p95 per endpoint on a dashboard. It works when every red-team case is blocked or safely refused, the eval runs in CI on every change, and one trace link explains a failed run end to end.
+**Sources:** https://mml-book.github.io/ (ch 5), https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
 
-**Sources:** https://genai.owasp.org/llm-top-10/; https://docs.langchain.com/langsmith/observability-quickstart; https://langfuse.com/docs/observability/get-started
+**Exercises:**
+- `10-01-numeric-derivative` — central-difference `numeric_derivative(f, x, h)` tested against known derivatives, with the error shrinking as h shrinks from 1e-2 to 1e-5.
+- `10-02-activation-derivatives` — sigmoid, tanh, relu and their derivatives, each checked against the numeric derivative at many points.
+- `10-03-chain-rule-composed` — the derivative of `f_k(...f_1(x))` from a list of (function, derivative) pairs applied by the chain rule, checked numerically.
 
-## 11. Integrating an agent service into a TypeScript full-stack app
+## 11. Partial derivatives, gradients and Jacobians
 
-**Learned when:** the Learner connects the Next.js/Express app to `agent-service` so a user can chat with the agent in the browser with streamed tokens, approvals and history, with the Python service never exposed directly to the public.
+**Learned when:** the Learner derives ∇L for MSE with respect to w and b, matches it to a numeric gradient, and explains why a step against the gradient lowers the loss.
 
-**Teach:** the shape: browser → Next.js (session, authorization, rate limit) → agent-service over a private network with a service secret → model and tools; passing the user's identity and permissions to the agent (never the session cookie); streaming end to end: FastAPI SSE → Route Handler or Server Function that re-streams → `EventSource` or `fetch` with a `ReadableStream` in a Client Component; conversation threads stored by `thread_id` per user; the approval UI for `interrupt`: show the pending action, resume via the API; timeouts and cancellation (`AbortController` → client disconnect → cancel the run); error states and retries; cost attribution per user; running both services in Compose and deploying them side by side; contract tests against the FastAPI OpenAPI schema with a generated TypeScript client.
+**Teach:** partial derivative holds the other inputs fixed; the gradient vector has the same shape as the parameters; the gradient is the direction of steepest ascent in parameter space; multivariable chain rule sums over paths, which is the `+=` in every autograd engine; Jacobian for vector-to-vector functions; the Hessian as curvature, named only; the analytic gradient of MSE `(2/n) Σ (ŷ−y)·x` and `(2/n) Σ (ŷ−y)`; gradient checking with relative error; numeric gradients cost one function pair per parameter.
 
-**Probe:** calling the Python service from the browser with the API key in the bundle; letting the agent trust a `user_id` field the browser sent; buffering the whole reply and then sending it; no timeout so a hung run holds a connection forever; a chat that forgets history on refresh; skipping authorization "because the agent only reads".
+**Probe:** the gradient placed in input space instead of parameter space; a branching variable's contributions overwritten instead of summed; the gradient's shape not matching the parameter's; a gradient check passed with absolute error on values of size 1e6; the Hessian believed necessary for training.
 
-**Practice:** Add `/assistant` to the Portfolio Project 1 app: a chat Client Component with streamed tokens, thread history from `agent-service`, and an approval card for interrupted runs; the Python service is reachable only from the app's network. It works when tokens appear as they are generated, a refund over the threshold shows an approval card that resumes the run, closing the tab cancels the run in the traces, and a direct request to the Python service from the internet is refused.
+**Sources:** https://mml-book.github.io/ (ch 5), https://d2l.ai/ (ch 2, calculus and automatic differentiation)
 
-**Sources:** https://fastapi.tiangolo.com/advanced/custom-response/; https://nextjs.org/docs/app/getting-started/mutating-data; https://docs.langchain.com/oss/python/langgraph/interrupts
+**Exercises:**
+- `11-01-numeric-gradient` — `numeric_gradient(f, params)` over a list of floats by central differences, tested on quadratics and on a function with interacting parameters.
+- `11-02-mse-gradient` — the analytic gradient of MSE with respect to w and b for `y = wx + b`, matching the numeric gradient on several datasets.
+- `11-03-jacobian-and-gradcheck` — a numeric Jacobian for f: Rⁿ → Rᵐ and `gradient_check(analytic, numeric)` returning the relative error, with a test that a deliberately wrong analytic gradient fails.
 
-## 12. Portfolio Project 3: an AI agent app built with LangGraph
+## 12. Optimization basics
 
-**Learned when:** the Learner ships a deployed AI agent product (Next.js front, TypeScript API, Python LangGraph service, Postgres with pgvector, tracing, evals in CI) with a README that explains the graph, the guardrails and the numbers, and can defend it in a technical interview.
+**Learned when:** the Learner implements gradient descent on any differentiable function, reads a trajectory to say whether the learning rate is too high or too low, and explains convexity's role for linear and logistic regression.
 
-**Teach:** picking a domain where an agent with tools and retrieval beats a plain chat (support over the Learner's own data, an operations assistant, a research helper); the graph drawn before code; tools with least privilege; RAG over real documents; human approval on any destructive step; eval set with a score history and a red-team set; cost and latency budget per request with alerts; tracing in production with personal data handled; the README: architecture diagram, graph diagram, guardrails, eval results table, cost per conversation, failure modes and what the user sees; a demo account and a recorded walkthrough; reusing Projects 1 and 2 (auth, CI, Docker, queues) rather than rebuilding.
+**Teach:** objective, minimum, local vs global; convex functions have one basin (linear and logistic regression are convex, neural nets are not); step size / learning rate; the update `x -= lr * grad`; convergence and divergence, with `lr > 2/L` diverging on a quadratic with curvature L; oscillation at a borderline rate; stopping criteria (gradient norm, loss change, max steps); badly scaled problems and why feature scaling helps; backtracking line search as an adaptive step; saddle points and plateaus as the real high-dimensional problem, not local minima.
 
-**Probe:** a wrapper around one prompt called an "agent"; no evals or a single screenshot as evidence; unlimited tools and no approval step; secrets in the Python service's image; a README that can't answer "how much does a conversation cost".
+**Probe:** a loss that grows blamed on a bug rather than the learning rate; "bigger learning rate = faster"; stopping on a fixed step count with no convergence check; assuming GD finds the global minimum of any function; a local minimum called the main obstacle in deep learning.
 
-**Practice:** Build, deploy and document the project over the final week and a half, then run the fresh-clone test (Compose brings up all services), the eval suite, and the red-team set on the deployed app. It works when the evals pass in CI, the traces show every run, the guardrails hold against the red-team set, and the Tutor's mock interview on the architecture finds no decision the Learner cannot justify.
+**Sources:** https://mml-book.github.io/ (ch 7), https://d2l.ai/ (ch 12 optimization)
 
-**Sources:** https://docs.langchain.com/oss/python/langgraph/overview; https://genai.owasp.org/llm-top-10/; https://docs.langchain.com/langsmith/evaluation
+**Exercises:**
+- `12-01-gradient-descent` — `gradient_descent(grad_f, x0, lr, steps)` returning the trajectory, converging on a quadratic and diverging when `lr > 2/L`.
+- `12-02-minimize-1d` — minimize a 1-D function with a numeric gradient and a tolerance-based stop, returning the minimizer and the number of steps taken.
+- `12-03-line-search-descent` — gradient descent with backtracking (Armijo) line search that converges on a badly scaled quadratic where a fixed learning rate either diverges or crawls.
+
+## 13. Likelihood, entropy and cross-entropy
+
+**Learned when:** the Learner explains why "minimize cross-entropy" equals "maximize likelihood", why logs are used, and writes a log-sum-exp that survives inputs of 1000.
+
+**Teach:** likelihood of data under a model; the i.i.d. assumption turns a joint into a product; logs turn products into sums and avoid underflow; negative log-likelihood as the loss; maximum-likelihood estimation; MSE is the NLL of Gaussian noise, BCE is the NLL of Bernoulli outputs; entropy as expected surprise; cross-entropy and KL divergence, KL ≥ 0 and asymmetric; the log-sum-exp trick and `log_softmax`; `log(0)` and float overflow as real bugs, so clip or work in logits; accuracy is not differentiable, log-loss is.
+
+**Probe:** cross-entropy assumed symmetric; `math.exp(1000)` inside a softmax; probabilities clipped at 0 producing `-inf` loss; the MLE of a Bernoulli believed to need gradient descent; entropy of a deterministic outcome given as 1; "we use logs because they are convenient" with no numerical reason.
+
+**Sources:** https://d2l.ai/ (appendix, information theory), https://mml-book.github.io/ (ch 6, 8)
+
+**Exercises:**
+- `13-01-logsumexp` — `logsumexp(xs)` and `log_softmax(xs)` stable for `[1000, 1000]` and `[-1000, -1000]`, matching the naive formula on moderate values.
+- `13-02-entropy-and-kl` — `entropy`, `cross_entropy` and `kl` over probability lists that treat `0·log 0` as 0, with tests that KL ≥ 0 and KL(p, p) = 0.
+- `13-03-mle-and-nll` — `mle_bernoulli`, `mle_gaussian` (mean and variance) and `nll_bernoulli(ys, ps)`, with the test showing the NLL equals the BCE formula and the MLE minimizes it.
+
+## 14. Eigenvectors and SVD, just enough for PCA
+
+**Learned when:** the Learner explains PCA as "the top eigenvectors of the covariance matrix are the directions of most variance", finds the dominant eigenvector by power iteration, and reads what `np.linalg.svd` returns.
+
+**Teach:** an eigenvector keeps its direction under A, scaled by its eigenvalue; covariance matrix from centered data; symmetric matrices have real eigenvalues and orthogonal eigenvectors; power iteration and why it converges to the largest eigenvalue; deflation to find the next one; SVD X = UΣVᵀ as the general factorization; singular values squared are the eigenvalues of XᵀX; low-rank approximation keeps the top-k singular values and the dropped energy is the sum of the squared rest; eigenvectors are defined only up to sign and scale; you read SVD results, you do not hand-compute them.
+
+**Probe:** a test that fails because an eigenvector came back with the opposite sign; covariance computed on uncentered data; the largest singular value confused with the largest eigenvalue of X itself; expecting power iteration to find all eigenvectors at once; `np.linalg.svd` returning V rather than Vᵀ.
+
+**Sources:** https://mml-book.github.io/ (ch 4, 10), https://github.com/nilbuild/developer-roadmap/tree/master/roadmaps/machine-learning/content
+
+**Exercises:**
+- `14-01-covariance-matrix` — the covariance matrix of a list of rows with `ddof`, in pure Python, matching `np.cov`.
+- `14-02-power-iteration` — the dominant eigenpair of a symmetric matrix by power iteration, compared to NumPy up to sign, plus one deflation step for the second pair.
+- `14-03-low-rank-approximation` — rank-k reconstruction with `np.linalg.svd`, with the Frobenius error equal to the dropped singular values' energy and `explained_variance(X, k)` as a fraction.

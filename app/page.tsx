@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { loadCurriculum } from "@/lib/curriculum.ts";
-import { allDays, allExerciseStates, allReviews, allTopicStates, getDay, getMessages } from "@/lib/db.ts";
-import { currentStreak, exerciseStatus, isTopicLearned, localToday, planToday, type PlanItem } from "@/lib/progress.ts";
-import { dotClass } from "@/components/Sidebar";
+import { allExerciseStates, allReviews, allTopicStates, getMessages } from "@/lib/db.ts";
+import { exerciseStatus, isTopicLearned, localToday, planToday, type PlanItem } from "@/lib/progress.ts";
+import { dotClass } from "@/lib/status-ui.ts";
+import { CurriculumCards } from "@/components/CurriculumCards";
 
 const statusLabel: Record<string, string> = {
   new: "Not started",
@@ -11,23 +12,17 @@ const statusLabel: Record<string, string> = {
   needs_explain: "Explain your solution",
 };
 
-export default async function Today() {
+export default async function Home() {
   await connection();
   const today = localToday();
-  const { topics, exercises } = loadCurriculum();
+  const { phases, topics, exercises } = loadCurriculum();
   const topicStates = allTopicStates();
   const exerciseStates = allExerciseStates();
   const reviewsAll = allReviews();
   const plan = planToday(topics, topicStates, exerciseStates, reviewsAll, today);
   const topicOf = (id: string) => topics.find((t) => t.id === id)!;
 
-  const learned = topics.filter((t) => isTopicLearned(t, topicStates.get(t.id), exerciseStates, today)).length;
-  const exercisesDone = [...exercises.keys()].filter((id) => exerciseStatus(exerciseStates.get(id), today) === "done").length;
 
-  const keptDays = new Set(allDays().filter((d) => d.kept).map((d) => d.date));
-  const streak = currentStreak(keptDays, today);
-  const keptToday = keptDays.has(today);
-  const passedToday = !!getDay(today)?.exercise_passed;
   const reviews = plan.filter((p): p is Extract<PlanItem, { kind: "review" }> => p.kind === "review");
   const retries = plan.filter((p): p is Extract<PlanItem, { kind: "retry" }> => p.kind === "retry");
   const teach = plan.find((p): p is Extract<PlanItem, { kind: "teach" }> => p.kind === "teach");
@@ -42,21 +37,7 @@ export default async function Today() {
           <p className="eyebrow">{new Date(`${today}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p>
           <h1 className="font-display text-4xl font-bold">Today&apos;s Session</h1>
         </div>
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <Stat label="Streak" value={`${streak}d`} />
-          <Stat label="Reviews due" value={reviews.length} />
-          <Stat label="Come-backs" value={retries.length} />
-          <Stat label="Topics learned" value={`${learned}/${topics.length}`} />
-          <Stat label="Exercises done" value={`${exercisesDone}/${exercises.size}`} />
-        </dl>
       </header>
-
-      {!keptToday && (
-        <p className="rounded-md bg-warn-soft px-4 py-3 text-[15px]" role="status">
-          <strong>{streak > 0 ? `Keep your ${streak}-day streak:` : "Start a streak:"}</strong>{" "}
-          {[!passedToday && "pass one exercise", reviews.length > 0 && `clear ${reviews.length} due review${reviews.length === 1 ? "" : "s"}`].filter(Boolean).join(" and ")} today.
-        </p>
-      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         {/* Up next: the main work of the Session */}
@@ -152,16 +133,16 @@ export default async function Today() {
           </section>
         </div>
       </div>
-    </main>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="panel min-w-32 px-4 py-3">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="font-mono text-2xl font-semibold tabular-nums">{value}</dd>
-    </div>
+      <CurriculumCards
+        phases={phases}
+        topics={topics}
+        topicStates={topicStates}
+        exerciseStates={exerciseStates}
+        currentTopicId={topics.find((t) => !isTopicLearned(t, topicStates.get(t.id), exerciseStates, today))?.id ?? null}
+        today={today}
+      />
+    </main>
   );
 }
 

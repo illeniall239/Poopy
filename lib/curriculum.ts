@@ -133,13 +133,18 @@ export function loadCurriculum(root = ROOT): Curriculum {
       for (const exId of topic.exerciseIds) {
         const folder = join(root, dir, exId.slice(`p${phase}-`.length));
         const read = (f: string) => readFileSync(join(folder, f), "utf8");
-        const extra: Exercise["languages"] = {};
+        const langs: Exercise["languages"] = {};
         for (const lang of LANGUAGE_IDS) {
           const files = LANGUAGES[lang].files;
-          if (lang === "typescript" || !files || !existsSync(join(folder, files.starter))) continue;
-          extra[lang] = { starter: read(files.starter), test: read(files.test) };
+          if (!files || !existsSync(join(folder, files.starter))) continue;
+          langs[lang] = { starter: read(files.starter), test: read(files.test) };
         }
-        exercises.set(exId, parseExercise(read("exercise.md"), exId, topic.id, read("starter.ts"), read("test.ts"), extra));
+        if (langs.typescript) langs.javascript = { starter: stripTypes(langs.typescript.starter), test: langs.typescript.test };
+        const first = Object.values(langs)[0];
+        if (!first) throw new Error(`Exercise ${exId} has no starter file in any language`);
+        const ex = parseExercise(read("exercise.md"), exId, topic.id, first.starter, first.test);
+        ex.languages = langs;
+        exercises.set(exId, ex);
       }
     }
   }

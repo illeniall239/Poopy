@@ -1,21 +1,20 @@
 import { loadCurriculum } from "@/lib/curriculum.ts";
-import { allDays, allExerciseStates, allTopicStates } from "@/lib/db.ts";
-import { currentStreak, exerciseStatus, isTopicLearned, localToday } from "@/lib/progress.ts";
+import { allExerciseStates, allTopicStates } from "@/lib/db.ts";
+import { exerciseStatus, isTopicLearned, localToday } from "@/lib/progress.ts";
 import { dotClass } from "@/lib/status-ui.ts";
 export { dotClass };
-import { NavLink, TopicLink } from "./NavLink";
+import { NavLink } from "./NavLink";
 import { SidebarToggle } from "./SidebarToggle";
 import { SketchpadLink } from "./SketchpadLink";
 
 export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const today = localToday();
-  const { phases, topics, exercises } = loadCurriculum();
+  const { topics, exercises } = loadCurriculum();
   const topicStates = allTopicStates();
   const states = allExerciseStates();
   const learned = topics.filter((t) => isTopicLearned(t, topicStates.get(t.id), states, today)).length;
   const done = [...exercises.keys()].filter((id) => exerciseStatus(states.get(id), today) === "done").length;
   const current = topics.find((t) => !isTopicLearned(t, topicStates.get(t.id), states, today));
-  const streak = currentStreak(new Set(allDays().filter((d) => d.kept).map((d) => d.date)), today);
 
   if (collapsed) {
     return (
@@ -26,7 +25,6 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
           <div className="w-full rounded-full bg-accent" style={{ height: `${(done / exercises.size) * 100}%` }} />
         </div>
         {current && <span className="font-mono text-xs font-bold text-accent" title={`Current topic: ${current.title}`}>{current.id}</span>}
-        <span className="font-mono text-xs text-warn" title={`${streak}-day streak`}>{streak}d</span>
       </aside>
     );
   }
@@ -36,14 +34,12 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
       <div className="flex items-start justify-between gap-2 pl-3 pt-2">
         <div className="grid gap-0.5">
           <span className="font-display text-xl font-bold">Poopy</span>
-          <span className="text-xs text-muted">Phase {current?.phase ?? phases.at(-1)?.number} · {phases.find((p) => p.number === (current?.phase ?? phases.at(-1)?.number))?.title}</span>
         </div>
         <SidebarToggle collapsed={false} />
       </div>
 
       <nav className="grid gap-0.5" aria-label="Main">
-        <NavLink href="/">Today</NavLink>
-        <NavLink href="/topics">All topics</NavLink>
+        <NavLink href="/">Home</NavLink>
         <NavLink href="/recap">Recap</NavLink>
         <NavLink href="/interview">Interview practice</NavLink>
         <NavLink href="/mistakes">Mistake log</NavLink>
@@ -52,7 +48,6 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
       </nav>
 
       <div className="grid gap-2 px-3">
-        <p className="font-mono text-xs text-warn">{streak}-day streak</p>
         <div className="flex justify-between font-mono text-xs text-muted">
           <span>{learned}/{topics.length} topics</span>
           <span>{done}/{exercises.size} exercises</span>
@@ -62,33 +57,6 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
         </div>
       </div>
 
-      <div className="hidden min-h-0 gap-0.5 lg:grid">
-        <p className="eyebrow px-3 pb-1">Curriculum</p>
-        {topics.map((t, i) => {
-          const phaseStart = i === 0 || topics[i - 1].phase !== t.phase;
-          const isLearned = isTopicLearned(t, topicStates.get(t.id), states, today);
-          return (
-            <div key={t.id} className="grid">
-            {phaseStart && (
-              <p className="mt-3 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                Phase {t.phase} · {phases.find((p) => p.number === t.phase)?.title}
-              </p>
-            )}
-            <TopicLink href={`/topics/${t.id}`} className="group flex items-start gap-3 rounded-md px-3 py-1.5">
-              <span className={`w-7 shrink-0 font-mono text-xs ${t.id === current?.id ? "font-bold text-accent" : "text-muted"}`}>{t.id}</span>
-              <span className={`min-w-0 flex-1 text-sm leading-snug ${isLearned ? "text-muted line-through decoration-line" : t.id === current?.id ? "font-semibold" : ""}`}>
-                {t.title}
-              </span>
-              <span className="flex shrink-0 gap-1 pt-2" aria-hidden>
-                {t.exerciseIds.map((id) => (
-                  <span key={id} className={`size-1.5 rounded-full ${dotClass[exerciseStatus(states.get(id), today)]}`} />
-                ))}
-              </span>
-            </TopicLink>
-            </div>
-          );
-        })}
-      </div>
     </aside>
   );
 }

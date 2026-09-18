@@ -61,7 +61,8 @@ export const LANGUAGES: Record<Language, LanguageSpec> = {
 // The chosen language, or TypeScript when this Exercise has no files for it.
 export function currentLanguage(ex: { languages: Partial<Record<Language, unknown>> }): Language {
   const chosen = getSetting("language", "typescript");
-  return isLanguage(chosen) && ex.languages[chosen] ? chosen : "typescript";
+  if (isLanguage(chosen) && ex.languages[chosen]) return chosen;
+  return ex.languages.typescript ? "typescript" : (Object.keys(ex.languages)[0] as Language);
 }
 
 export const LANGUAGE_IDS = Object.keys(LANGUAGES) as Language[];

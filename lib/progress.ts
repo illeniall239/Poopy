@@ -67,19 +67,6 @@ export function isTopicLearned(topic: Topic, topicState: TopicState | undefined,
   return topic.exerciseIds.every((id) => exerciseStatus(states.get(id), today) === "done");
 }
 
-// Streak: consecutive kept days ending today (or yesterday, while today is still in progress).
-export function currentStreak(keptDays: Set<string>, today: string): number {
-  let day = keptDays.has(today) ? today : addDays(today, -1);
-  let streak = 0;
-  while (keptDays.has(day)) {
-    streak++;
-    day = addDays(day, -1);
-  }
-  return streak;
-}
-
-// A day is kept when an Exercise was passed and no Spaced Review due that day is left undone.
-export const isDayKept = (exercisePassed: boolean, reviewsStillDue: number) => exercisePassed && reviewsStillDue === 0;
 
 export function reviewAfter(review: Review, passed: boolean, today: string): Review {
   const step = passed ? Math.min(review.step + 1, REVIEW_INTERVALS.length - 1) : 0;

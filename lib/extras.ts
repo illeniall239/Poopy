@@ -74,12 +74,13 @@ function exerciseMd(g: Generated, topic: Topic) {
 export async function generateExtra(topicId: string, language: Language): Promise<{ id: string; title: string }> {
   const topic = getTopic(topicId);
   if (!topic) throw new Error(`Unknown topic ${topicId}`);
-  const lang: Language = language === "javascript" ? "typescript" : language; // JS is derived from TS
-  const spec = LANGUAGES[lang];
-  if (!spec.files) throw new Error(`Can't generate for ${lang}`);
-
   const { exercises } = loadCurriculum();
   const builtIn = topic.exerciseIds.map((id) => exercises.get(id)!);
+  const wanted: Language = language === "javascript" ? "typescript" : language; // JS is derived from TS
+  const offered = new Set(builtIn.flatMap((e) => Object.keys(e.languages)));
+  const lang: Language = offered.size === 0 || offered.has(wanted) ? wanted : (offered.has("python") ? "python" : ([...offered][0] as Language));
+  const spec = LANGUAGES[lang];
+  if (!spec.files) throw new Error(`Can't generate for ${lang}`);
   const existingTitles = [...builtIn.map((e) => e.title), ...loadExtras(topicId).map((e) => e.title)];
   const exemplar = builtIn.find((e) => e.languages[lang]);
   const exemplarFiles = exemplar

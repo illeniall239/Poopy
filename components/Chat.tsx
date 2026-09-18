@@ -4,6 +4,14 @@ import { Markdown } from "./Markdown";
 import { MicButton } from "./MicButton";
 import type { ChatKind, RunInfo } from "@/lib/tutor";
 
+// One-click requests for an explanation instead of a question (see "Explaining a concept" in lib/tutor.ts).
+const QUICK_ASKS: [string, string][] = [
+  ["Explain simply", "Explain the idea we're on simply, in plain words."],
+  ["Like I'm 10", "Explain it like I'm 10 years old: an everyday analogy first, no jargon until it clicks."],
+  ["Give an analogy", "Give me a different analogy for this, and say where it breaks down."],
+  ["Show an example", "Walk me through a tiny concrete example with real values, step by step."],
+];
+
 export type ChatMessageView = { role: "learner" | "tutor"; content: string; provider?: string | null };
 
 type Props = {
@@ -106,7 +114,16 @@ export function Chat({ kind, id, initial, autoStart = false, placeholder = "Repl
       </div>
       {notice && <p className="mt-2 rounded bg-warn-soft px-3 py-2 text-sm">{notice}</p>}
       {error && <p className="mt-2 rounded bg-bad-soft px-3 py-2 text-sm" role="alert">{error}</p>}
-      <form onSubmit={submit} className="mt-3 flex gap-2">
+      {kind !== "interview" && kind !== "explain" && kind !== "worked" && (
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Ask the Tutor to explain">
+          {QUICK_ASKS.map(([label, text]) => (
+            <button key={label} type="button" disabled={busy} onClick={() => void send(text)} className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted transition-colors hover:border-accent hover:text-ink disabled:opacity-50">
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      <form onSubmit={submit} className="mt-2 flex gap-2">
         <label htmlFor={`chat-${kind}-${id}`} className="sr-only">Message</label>
         <textarea
           id={`chat-${kind}-${id}`}

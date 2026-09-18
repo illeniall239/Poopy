@@ -25,7 +25,7 @@ const LANGS = {
 function exerciseDirs(dir) {
   return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).flatMap((e) => {
     const p = join(dir, e.name);
-    return existsSync(join(p, "test.ts")) ? [p] : exerciseDirs(p);
+    return existsSync(join(p, "exercise.md")) ? [p] : exerciseDirs(p);
   });
 }
 
@@ -38,7 +38,7 @@ function run(dir, lang, solutionSource) {
     copyFileSync(join(dir, solutionSource), join(tmp, L.solution));
     let out = "";
     for (const cmd of L.commands) {
-      const r = spawnSync(cmd[0], cmd.slice(1), { cwd: tmp, encoding: "utf8", timeout: 60000, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } });
+      const r = spawnSync(cmd[0], cmd.slice(1), { cwd: tmp, encoding: "utf8", timeout: 120000, env: { ...process.env, PYTHONDONTWRITEBYTECODE: "1" } });
       out += (r.stdout ?? "") + (r.stderr ?? "");
       if (r.status !== 0) return { ok: false, out };
     }
@@ -49,13 +49,15 @@ function run(dir, lang, solutionSource) {
 }
 
 let failures = 0, checked = 0;
+const noLanguage = (dir) => !Object.values(LANGS).some((L) => existsSync(join(dir, L.starter)));
 const dirs = exerciseDirs(root).filter((d) => d.includes(filter));
 for (const dir of dirs) {
   const name = dir.slice(root.length + 1);
+  if (noLanguage(dir)) { failures++; console.log(`FAIL ${name}: no starter in any language`); continue; }
   for (const [lang, L] of Object.entries(LANGS)) {
     if (onlyLangs && !onlyLangs.includes(lang)) continue;
     const present = [L.starter, L.test, L.reference].filter((f) => existsSync(join(dir, f)));
-    if (present.length === 0) { if (lang === "typescript") { failures++; console.log(`FAIL ${name}: missing TypeScript files`); } continue; }
+    if (present.length === 0) continue;
     if (present.length < 3) { failures++; console.log(`FAIL ${name} [${lang}]: has ${present.join(", ")} but not all of ${L.starter}, ${L.test}, ${L.reference}`); continue; }
     if (!existsSync(join(dir, "exercise.md"))) { failures++; console.log(`FAIL ${name}: missing exercise.md`); continue; }
     checked++;

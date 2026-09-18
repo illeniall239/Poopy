@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getExercise, getTopic, loadCurriculum } from "@/lib/curriculum.ts";
 import {
   addMessage, allReviews, allTopicStates, allExerciseStates, clearThread, getExerciseState, getMessages, getSetting,
-  markTopic, saveExerciseState, saveReview, setSetting, logMistake, topicMistakes, createInterview, getInterview, endInterview, saveInterviewCode, addProjectReview, saveSketchScene, getDay, saveDay, updateMistakeText, deleteMistake, addMistakeManual,
+  markTopic, saveExerciseState, saveReview, setSetting, logMistake, topicMistakes, createInterview, getInterview, endInterview, saveInterviewCode, addProjectReview, saveSketchScene, updateMistakeText, deleteMistake, addMistakeManual,
 } from "@/lib/db.ts";
 import { jsonReply, settingsDefaults } from "@/lib/llm.ts";
 import { runTests } from "@/lib/runner.ts";
@@ -16,7 +16,7 @@ import { needsProjectReview } from "@/lib/progress.ts";
 import { feedbackPrompt, feedbackSchema, isInterviewKind, type Feedback } from "@/lib/interview.ts";
 import { redirect } from "next/navigation";
 import {
-  exerciseStatus, firstReview, isTopicLearned, isDayKept, localToday, onTestsPassed, reviewAfter, startRetry as retryState,
+  exerciseStatus, firstReview, isTopicLearned, localToday, onTestsPassed, reviewAfter, startRetry as retryState,
   type ExerciseState,
 } from "@/lib/progress.ts";
 import {
@@ -34,14 +34,6 @@ function stateOf(id: string): ExerciseState {
   return getExerciseState(id) ?? {
     exercise_id: id, code: null, hints_shown: 0, worked_example: 0, tests_passed_at: null, clean_pass: 0, explain_passed_at: null, retry_due: null, plan_done_at: null, plan_text: null,
   };
-}
-
-// Streak bookkeeping: re-evaluate today after anything that can keep it.
-function refreshToday(exercisePassedNow = false) {
-  const today = localToday();
-  const exercisePassed = exercisePassedNow || !!getDay(today)?.exercise_passed;
-  const stillDue = allReviews().filter((r) => r.due_date <= today && r.last_done !== today).length;
-  saveDay(today, exercisePassed, isDayKept(exercisePassed, stillDue));
 }
 
 function checkTopicLearned(topicId: string) {
@@ -89,7 +81,6 @@ export async function runExercise(exerciseId: string, code: string) {
   const firstPass = run.passed && !state.tests_passed_at;
   if (firstPass) state = onTestsPassed(state, new Date().toISOString(), localToday());
   saveExerciseState(state);
-  if (firstPass) refreshToday(true);
   const topicLearned = run.passed ? checkTopicLearned(ex.topicId) : false;
   revalidatePath("/");
   return { ...run, status: exerciseStatus(state, localToday()), topicLearned };
@@ -169,7 +160,6 @@ export async function answerReview(topicId: string, answer: string) {
   for (const m of value.misconceptions) logMistake(topicId, m, "spaced review");
   const next = reviewAfter(review, value.passed, today);
   saveReview(next);
-  refreshToday();
   revalidatePath("/");
   return { ...value, nextDue: next.due_date };
 }

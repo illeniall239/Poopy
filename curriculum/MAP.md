@@ -2,11 +2,11 @@
 
 The fixed sequence of Topics the Tutor teaches. The Tutor adapts pacing, never content (ADR 0001). Changing this file is a deliberate, versioned decision.
 
-**Budget:** 481 h at 18 h/week ≈ 27 weeks. (26 weeks originally; about one week was added on 2026-09-17 for the five "how it works" Topics, so nothing job-critical got thinner.) Phase hours include that Phase's share of daily Spaced Reviews (~15 min/Session) and, from Phase 3 on, the daily DSA Exercise (~20 min/Session, about 20 h per 4-week Phase). Interview Practice is a separate section and sits outside this budget.
+**Budget:** about 976 h at 18 h/week ≈ 54 weeks. (481 h / 27 weeks until 2026-09-18, when five AI-foundations Phases (7–11, ~495 h) were added between full-stack and agents, and Phase 12 grew by four topics; the Learner chose depth over speed.) Phase hours include that Phase's share of daily Spaced Reviews (~15 min/Session) and, from Phase 3 on, the daily DSA Exercise (~20 min/Session, about 20 h per 4-week Phase). Interview Practice is a separate section and sits outside this budget.
 
 **Tools change.** Framework Topics are taught against the current official docs when the Learner reaches that Phase. Versions named here were current on 2026-09-17.
 
-**Exercises** are written one Phase at a time, just before the Learner reaches it. Only Phase 1 has Exercises today.
+**Exercises** exist in the app for Phases 1–2 (TypeScript, JavaScript, Python, Java) and Phases 7–11 (Python). Phases 3–6 and 12–13 are practised in the Learner's own projects and checked by Project Review.
 
 **Audit.** On 2026-09-17 the Map was checked against the sources below (fetched pages, not memory): roadmap.sh TypeScript, JavaScript, Full Stack, Backend, Frontend, React, Node.js, System Design, AI Engineer and AI Agents topic lists (github.com/kamranahmedse/developer-roadmap, `roadmaps/<name>/content`); TypeScript Handbook; MDN JavaScript Guide; *Eloquent JavaScript* table of contents; NeetCode 150 categories (via a mirror — neetcode.io needs JavaScript); OWASP Top 10:2025; OWASP Top 10 for LLM Applications 2025; LangGraph v1 docs; Next.js docs (v16); react.dev. Gaps and ordering problems it found were fixed in this version.
 
@@ -18,14 +18,21 @@ The fixed sequence of Topics the Tutor teaches. The Tutor adapts pacing, never c
 | 4. Frontend: HTML, CSS, React, Next.js | 72 | 4.0 |
 | 5. Security, testing, deployment — Portfolio Project 1 | 69 | 3.8 |
 | 6. Real-time features and background jobs — Portfolio Project 2 | 42 | 2.3 |
-| 7. Python, LLM apps, agents — Portfolio Project 3 | 66 | 3.7 |
-| 8. System design basics and interview preparation | 30 | 1.7 |
+| 7. Data and math for machine learning | 90 | 5.0 |
+| 8. Classical machine learning | 105 | 5.8 |
+| 9. Deep learning | 130 | 7.2 |
+| 10. Transformers and large language models | 85 | 4.7 |
+| 11. Vision, image generation, audio and multimodal models | 85 | 4.7 |
+| 12. LLM apps and agents — Portfolio Project 3 | 80 | 4.4 |
+| 13. System design basics and interview preparation | 34 | 1.9 |
+
+**AI foundations (Phases 7–11), added 2026-09-18.** Researched against fetched syllabi and topic lists: Stanford CS229, CS231n, CS224n, CS236, CS234/CS285; MIT 6.S191; fast.ai parts 1–2; DeepLearning.AI ML and DL specialisations; Full Stack Deep Learning; Made With ML; Mathematics for Machine Learning; Dive into Deep Learning; Karpathy's Zero to Hero; 3Blue1Brown; Google's ML Crash Course, guides and glossary; Hugging Face LLM, Audio, Diffusion and MCP courses; roadmap.sh machine-learning, ai-data-scientist, mlops, ai-engineer and ai-agents; and the primary papers (Attention Is All You Need, ViT, CLIP, DDPM, Whisper, DPO). Full reports: `docs/research/`. Their must-have items that the old plan lacked (data work, project strategy, serving and monitoring, responsible AI, RL basics before RLHF) are in.
 
 **"How it works" Topics.** Five big-picture Topics sit at the start of the Phase where they first matter: how computers run code (Phase 2), how the internet works and how databases work inside (Phase 3), how browsers work (Phase 4), how the cloud and deployment work (Phase 5). They are taught and reviewed like every other Topic. Their sources were added after the audit and are checked against the live pages when that Phase's Exercises are written.
 
 **Deliberately left out** (judged not worth the hours for a first full-stack job): bit manipulation, math and geometry problems, Dijkstra, union-find, iterators/generators and regular expressions as Topics of their own, GraphQL, gRPC, Kafka, AWS in depth, Terraform, Ansible.
 
-**Known tight spots:** Phases 5 and 7 carry the most material for their hours. Where time runs short, the weekly check-in cuts the Topics marked *(light)* to a single Session first.
+**Known tight spots:** Phases 5, 9 and 12 carry the most material for their hours. Where time runs short, the weekly check-in cuts the Topics marked *(light)* to a single Session first.
 
 ---
 
@@ -152,28 +159,140 @@ Goal: the Learner adds work that happens outside the request/response cycle, saf
 
 Sources: MDN WebSockets and Server-Sent Events docs; Redis docs; BullMQ docs; *Designing Data-Intensive Applications* (Kleppmann), chapters 11–12.
 
-## Phase 7 — Python, LLM apps, agents — Portfolio Project 3 (66 h)
+## Phase 7 — Data and math for machine learning (90 h)
 
-Goal: the Learner builds a reliable, observable LLM agent service and integrates it into a full-stack app.
+Goal: the Learner can load, clean and explore a real dataset with NumPy, pandas and matplotlib, run an honest A/B test, and has every piece of linear algebra, calculus, probability and information theory that Phase 8 (classical ML) and Phase 9 (deep learning) consume, learned code-first and in the order those phases use it. Detail: [phase-7/PHASE.md](phase-7/PHASE.md).
 
-1. Python for TypeScript developers: syntax, type hints, virtual environments and packaging with uv
-2. FastAPI basics *(light)*
-3. LLM API fundamentals: messages, tokens, streaming, structured output, prompt caching
-4. Prompt and context engineering; evaluating outputs
-5. Tool use (function calling)
-6. Model Context Protocol (MCP): building a server, using one from a client
-7. Retrieval-augmented generation: embeddings, chunking, vector search with pgvector
-8. LangChain agents: `create_agent` and middleware
-9. LangGraph: state, nodes, edges, checkpoints, memory, human-in-the-loop
-10. Agent reliability: evals and tracing (LangSmith or Langfuse), guardrails, OWASP LLM Top 10 2025 (prompt injection, excessive agency, unbounded consumption), cost and latency
-11. Integrating an agent service into a TypeScript full-stack app
-12. Portfolio Project 3: an AI agent app built with LangGraph
+1. NumPy arrays and vectorization
+2. Vectors, dot product, norms
+3. Matrices, matrix multiplication and broadcasting
+4. Linear systems, inverse, determinant
+5. pandas DataFrames and loading data
+6. Visualization with matplotlib
+7. EDA, data cleaning and data quality
+8. Probability for ML
+9. Inferential statistics and A/B testing
+10. Derivatives and the chain rule
+11. Partial derivatives, gradients and Jacobians
+12. Optimization basics
+13. Likelihood, entropy and cross-entropy
+14. Eigenvectors and SVD, just enough for PCA
 
-Sources: docs.python.org tutorial; uv docs; FastAPI docs; Anthropic API docs (messages, tool use, prompt caching); modelcontextprotocol.io; LangChain v1 docs; LangGraph v1 docs; LangSmith / Langfuse docs; OWASP Top 10 for LLM Applications 2025; pgvector README; roadmap.sh AI Engineer and AI Agents.
 
-## Phase 8 — System design basics and interview preparation (30 h)
+## Phase 8 — Classical machine learning (105 h)
 
-Goal: the Learner can reason through a junior-level system design question out loud and present their portfolio convincingly.
+Goal: the Learner can take a raw table to an honestly evaluated model: frame the task, beat a baseline, train linear, logistic, tree and ensemble models written from scratch, choose and tune them with cross-validation, cluster and reduce data, flag anomalies, recommend items, explain a tabular model, check it for unfairness, and say from an error analysis what to fix next. Detail: [phase-8/PHASE.md](phase-8/PHASE.md).
+
+1. Framing a problem, baselines, and when not to use ML
+2. Linear regression and MSE, closed form
+3. Gradient descent for linear regression
+4. Features: scaling, encoding and feature engineering
+5. Train, validation, test, cross-validation and leakage
+6. Overfitting, bias–variance and regularization
+7. Logistic regression and binary cross-entropy
+8. Classification metrics
+9. Multiclass: softmax regression and categorical cross-entropy
+10. k-nearest neighbors
+11. Decision trees
+12. Ensembles: bagging, random forests and gradient boosting
+13. Interpretability for tabular models
+14. Clustering: k-means
+15. PCA and dimensionality reduction
+16. Anomaly detection
+17. Recommender systems basics
+18. Responsible AI: fairness, bias and privacy
+19. Error analysis and project strategy
+20. The practical workflow: a scikit-learn-style capstone
+
+
+## Phase 9 — Deep learning (130 h)
+
+Goal: the Learner has built autograd from scratch, trains nets in PyTorch with their own loop, reads a training run like a mechanic, and is ready for attention and transformers in Phase 10. Detail: [phase-9/PHASE.md](phase-9/PHASE.md).
+
+1. The neuron, MLPs and the forward pass
+2. Activation functions
+3. Computational graphs and backprop by hand
+4. A scalar autograd engine (micrograd)
+5. Loss functions for nets
+6. Vectorized backprop: tensors and the backprop ninja
+7. PyTorch fundamentals: tensors, autograd, nn.Module, the training loop
+8. Optimizers and learning-rate schedules
+9. Initialization and activation/gradient statistics
+10. Normalization: BatchNorm and LayerNorm
+11. Regularization in deep nets
+12. Hyperparameter tuning methodology and experiment tracking
+13. Convolutional networks
+14. Modern CNN ideas: residual connections and transfer learning
+15. Vision tasks beyond classification: detection and segmentation
+16. GPUs, performance and debugging training
+17. Embeddings
+18. Sequence modeling: n-gram LM → MLP LM → RNN, LSTM, GRU
+19. Capstone: a tiny CNN and a character-level LM from scratch
+
+
+## Phase 10 — Transformers and large language models (85 h)
+
+Goal: the Learner can build a GPT from tokenizer to sampler, and explain how it was pretrained, aligned and served, including why it hallucinates. Detail: [phase-10/PHASE.md](phase-10/PHASE.md).
+
+1. Tokenization and BPE
+2. Embeddings revisited: static, contextual and tied
+3. Attention and self-attention from scratch
+4. The transformer block
+5. Encoder, decoder and encoder-decoder
+6. The language-modelling objective and a tiny GPT
+7. Scaling and pretraining
+8. Fine-tuning, instruction tuning and LoRA
+9. Reinforcement learning basics
+10. RLHF and preference optimization (DPO)
+11. Inference I: decoding and sampling
+12. Inference II: KV cache, quantization and context windows
+13. Hallucination, mechanically
+14. Tokenization revisited and LLM quirks
+
+
+## Phase 11 — Vision, image generation, audio and multimodal models (85 h)
+
+Goal: the Learner can trace a prompt through Stable Diffusion, a waveform through Whisper, an image through a vision-language model, and say how each is evaluated. Detail: [phase-11/PHASE.md](phase-11/PHASE.md).
+
+1. From CNNs to the Vision Transformer (ViT)
+2. Contrastive learning and CLIP
+3. Autoencoders, VAEs and VQ-VAE
+4. GANs, briefly
+5. Diffusion models: DDPM to DDIM
+6. Latent diffusion and text-to-image conditioning
+7. Evaluating image models
+8. Audio as data
+9. Speech recognition and Whisper
+10. Audio tokens and neural codecs
+11. Text-to-speech
+12. Multimodal models
+13. Evaluating generative models
+
+
+## Phase 12 — LLM apps and agents — Portfolio Project 3 (80 h)
+
+Goal: the Learner builds a reliable, observable LLM agent service in Python (LangGraph, FastAPI) and integrates it into a TypeScript full-stack app, with evals, tracing and guardrails they can defend. Python, uv, NumPy/pandas and PyTorch are assumed from Phases 7–11; how LLMs work inside (tokens, KV cache, quantization theory) from Phase 10. Detail: [phase-12/PHASE.md](phase-12/PHASE.md).
+
+1. FastAPI for model and agent services
+2. LLM API fundamentals: messages, tokens, streaming, structured output, prompt caching
+3. Prompt and context engineering; evaluating outputs
+4. Tool use (function calling)
+5. Model Context Protocol (MCP): building a server, using one from a client
+6. Retrieval-augmented generation: embeddings, chunking, vector search with pgvector
+7. LangChain agents: `create_agent` and middleware
+8. LangGraph: state, nodes, edges, checkpoints, memory, human-in-the-loop
+9. Agent reliability: evals and tracing, guardrails, OWASP LLM Top 10 2025, cost and latency
+10. Serving and deploying models: model as an API, batch vs online, latency and cost
+11. Inference optimization and running local models
+12. Monitoring, drift and observability for ML and LLM systems
+13. Product and UX for AI features
+14. Integrating an agent service into a TypeScript full-stack app
+15. Portfolio Project 3: an AI agent app built with LangGraph
+
+
+## Phase 13 — System design basics and interview preparation (34 h)
+
+Goal: the Learner reasons through a junior-level system design question out loud, from requirements to a diagram with named trade-offs, including one that involves a model, and presents three portfolio projects and a work history convincingly. Detail: [phase-13/PHASE.md](phase-13/PHASE.md).
 
 1. Requirements gathering and back-of-the-envelope estimation
 2. Scaling stateless services: load balancers, horizontal scaling
@@ -182,6 +301,5 @@ Goal: the Learner can reason through a junior-level system design question out l
 5. Queues and asynchronous architectures
 6. Consistency and availability trade-offs
 7. Designing classic systems: URL shortener, rate limiter, chat, news feed
-8. Behavioral interviews (STAR), resume, and writing up portfolio projects
-
-Sources: *Designing Data-Intensive Applications* (Kleppmann); *System Design Interview*, Vol. 1 (Alex Xu); roadmap.sh System Design.
+8. Designing ML and LLM systems
+9. Behavioral interviews (STAR), resume, writing up portfolio projects, and ML/AI interview questions
