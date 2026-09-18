@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def histogram(values: list[float], bins: int) -> tuple[list[int], list[float]]:
     if not values or bins < 1:
         raise ValueError("need at least one value and one bin")

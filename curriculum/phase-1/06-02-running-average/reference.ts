@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function runningAverages(nums: number[]): number[] {
   const result: number[] = [];
   let sum = 0;

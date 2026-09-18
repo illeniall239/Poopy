@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function binarySearch(sorted: number[], target: number): number {
   let lo = 0;
   let hi = sorted.length - 1;

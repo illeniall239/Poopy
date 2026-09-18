@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:
     merged: list[list[int]] = []
     for start, end in sorted(intervals, key=lambda pair: pair[0]):

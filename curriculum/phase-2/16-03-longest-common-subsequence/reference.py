@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def longest_common_subsequence(a: str, b: str) -> int:
     # dp[i][j] = LCS length of the first i characters of a and the first j characters of b.
     dp = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]

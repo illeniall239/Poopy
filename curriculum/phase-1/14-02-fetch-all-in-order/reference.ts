@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export type FetchPage = (url: string) => Promise<string>;
 
 export async function fetchAll(urls: string[], fetchPage: FetchPage): Promise<string[]> {

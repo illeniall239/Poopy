@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function digitSumUntilSingle(n: number): number {
   while (n >= 10) {
     let sum = 0;

@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 public class Solution {
     public static int[] sortedPairSum(int[] values, long target) {
         int lo = 0, hi = values.length - 1;

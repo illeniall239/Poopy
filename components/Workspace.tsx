@@ -6,8 +6,9 @@ import Editor, { type OnMount } from "@monaco-editor/react";
 import dynamic from "next/dynamic";
 import { Chat, type ChatMessageView } from "./Chat";
 import { Markdown } from "./Markdown";
+import { BreakdownView } from "./BreakdownView";
 import { OPEN_SKETCHPAD } from "./SketchpadLink";
-import { finishExplaining, markPlanDone, runExercise, saveCode, setLanguage, showNextHint, startRetry } from "@/app/actions";
+import { markPlanDone, runExercise, saveCode, setLanguage, showNextHint, startRetry } from "@/app/actions";
 import { PLAN_READY, PLAN_STAGES } from "@/lib/tutor";
 import type { ExerciseStatus } from "@/lib/progress";
 import type { Language } from "@/lib/languages";
@@ -29,19 +30,19 @@ type Props = {
     retryDue: string | null;
     workedExample: string | null;
     exerciseChat: ChatMessageView[];
-    explainChat: ChatMessageView[];
+    breakdown: string | null;
   };
 };
 
 const SketchPad = dynamic(() => import("./SketchPad"), { ssr: false, loading: () => <p className="p-6 text-sm text-muted">Loading the sketchpad…</p> });
 
 // The Exercise is done in this order; each stage is its own screen.
-type Stage = "problem" | "plan" | "code" | "explain";
+type Stage = "problem" | "plan" | "code" | "breakdown";
 const STAGES: { id: Stage; label: string }[] = [
   { id: "problem", label: "Problem" },
   { id: "plan", label: "Plan" },
   { id: "code", label: "Code" },
-  { id: "explain", label: "Explain" },
+  { id: "breakdown", label: "Breakdown" },
 ];
 type SideTab = "tutor" | "plan" | "problem" | "hints";
 
@@ -60,9 +61,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
   const stageOf = (text: string) => Number(text.match(/Stage (\d) of 6/)?.[1] ?? 0);
   const [planStage, setPlanStage] = useState(Math.max(1, ...initial.planChat.filter((m) => m.role === "tutor").map((m) => stageOf(m.content))));
   const [planText, setPlanText] = useState(initial.planText);
-  const [grade, setGrade] = useState<{ passed: boolean; feedback: string; topicLearned: boolean } | null>(null);
-  const [explainKey, setExplainKey] = useState(0);
-  const [grading, startGrading] = useTransition();
+  const [topicLearned, setTopicLearned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryStarted, setRetryStarted] = useState(false);
   const [sideTab, setSideTab] = useState<SideTab>("tutor");
@@ -71,7 +70,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
   const openSketch = (open: boolean) => { setSketchOpen(open); if (open) setSketchMounted(true); };
   const [dark, setDark] = useState(false);
   const [stage, setStage] = useState<Stage>(
-    initial.status === "needs_explain" ? "explain"
+    initial.status === "done" || initial.status === "waiting_retry" ? "breakdown"
       : initial.planDone ? "code"
       : initial.planChat.length > 0 ? "plan"
       : "problem",
@@ -87,10 +86,10 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
   }, []);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const locked = status === "done" || status === "needs_explain" || status === "waiting_retry";
+  const locked = status === "done" || status === "waiting_retry";
   const editable = !locked && planDone;
-  const explainOpen = status === "needs_explain" || initial.explainChat.length > 0 || !!grade;
-  const reachable: Record<Stage, boolean> = { problem: true, plan: true, code: planDone || locked, explain: explainOpen };
+  const solved = status === "done" || status === "waiting_retry";
+  const reachable: Record<Stage, boolean> = { problem: true, plan: true, code: planDone || locked, breakdown: solved };
 
   // Autosave the Learner's code a second after they stop typing.
   useEffect(() => {
@@ -112,7 +111,10 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
       const result = await runExercise(exercise.id, code);
       setRun(result);
       setStatus(result.status);
-      if (result.passed && result.status === "needs_explain") setStage("explain");
+      if (result.passed) {
+        setTopicLearned(result.topicLearned);
+        setStage("breakdown");
+      }
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -150,20 +152,6 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
     } finally {
       setWorkedLoading(false);
     }
-  }
-
-  function onFinishExplaining() {
-    startGrading(async () => {
-      try {
-        const result = await finishExplaining(exercise.id);
-        setGrade(result);
-        setStatus(result.status as ExerciseStatus);
-        if (!result.passed) setExplainKey((k) => k + 1); // a fresh round of questions
-        router.refresh();
-      } catch (e) {
-        setError((e as Error).message);
-      }
-    });
   }
 
   async function onLanguage(next: Language) {
@@ -322,8 +310,30 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
         </div>
       </section>
 
-      {/* 3 · Code and 4 · Explain: big editor, Tutor in the sidebar */}
-      <section hidden={sketchOpen || (stage !== "code" && stage !== "explain")} className="min-h-0 flex-1 p-4 lg:px-6">
+      {/* 4 · Breakdown: the full write-up, with the Tutor beside it for follow-up questions */}
+      <section hidden={sketchOpen || stage !== "breakdown"} className="min-h-0 flex-1 p-4 lg:px-6">
+        <div className="grid h-full gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="flex min-h-0 flex-col gap-3">
+            {topicLearned && <p className="rounded-md bg-accent-soft px-4 py-2 text-[15px] font-semibold" role="status">Topic {topic.id} is now learned. Its first spaced review is tomorrow.</p>}
+            {status === "waiting_retry" && <p className="rounded-md bg-warn-soft px-4 py-2 text-sm">You used help on this one, so it comes back on {initial.retryDue ?? "a later day"} to solve again from scratch.</p>}
+            <BreakdownView exerciseId={exercise.id} initial={initial.breakdown} active={stage === "breakdown" && solved} />
+            <div className="flex flex-wrap gap-2">
+              {nextExerciseId && <Link href={`/exercises/${nextExerciseId}`} className="btn btn-primary">Next exercise →</Link>}
+              <Link href="/" className="btn">Back to Home</Link>
+              <button onClick={() => setStage("code")} className="btn">See your code</button>
+            </div>
+          </div>
+          <aside className="panel flex min-h-[60vh] flex-col p-4 lg:min-h-0">
+            <p className="mb-2 font-display text-lg font-semibold">Questions about it?</p>
+            <div className="min-h-0 flex-1">
+              <Chat kind="exercise" id={exercise.id} initial={initial.exerciseChat} placeholder="Ask about the breakdown, the reference solution, or your code…" getContext={() => ({ code, lastRun: run })} />
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* 3 · Code: big editor, Tutor in the sidebar */}
+      <section hidden={sketchOpen || stage !== "code"} className="min-h-0 flex-1 p-4 lg:px-6">
         <div className="grid h-full gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="flex min-h-0 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -363,29 +373,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
           </div>
 
           <aside className="panel flex min-h-[70vh] flex-col lg:min-h-0">
-            {stage === "explain" ? (
-              <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-                <div className="grid gap-1">
-                  <p className="font-display text-lg font-semibold">Explain your solution</p>
-                  <p className="text-sm text-muted">Answer in your own words. Your code is on the left.</p>
-                </div>
-                {grade && (
-                  <div className={`rounded-md px-3 py-2 text-[15px] ${grade.passed ? "bg-accent-soft" : "bg-bad-soft"}`} role="status">
-                    <strong>{grade.passed ? "Explained." : "Not yet."}</strong> {grade.feedback}
-                    {grade.topicLearned && <p className="mt-1 font-semibold">Topic {topic.id} is now learned. Its first Spaced Review is tomorrow.</p>}
-                  </div>
-                )}
-                <div className="min-h-0 flex-1">
-                  <Chat key={explainKey} kind="explain" id={exercise.id} initial={explainKey === 0 ? initial.explainChat : []} autoStart={status === "needs_explain" && stage === "explain"} placeholder="Explain in your own words…" />
-                </div>
-                {status === "needs_explain" && (
-                  <button onClick={onFinishExplaining} disabled={grading} className="btn btn-primary self-end">
-                    {grading ? "Checking your explanation…" : "Finish explaining"}
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="flex gap-1 border-b border-line p-2" role="tablist">
                   {([["tutor", "Tutor"], ["plan", "Your plan"], ["problem", "Problem"], ["hints", `Hints ${hints.length}/${exercise.hintCount}`]] as const).map(([id, label]) => (
                     <button key={id} role="tab" aria-selected={sideTab === id} onClick={() => setSideTab(id)} className={`rounded-md px-3 py-1.5 text-sm font-semibold ${sideTab === id ? "bg-accent-soft text-accent" : "text-muted hover:text-ink"}`}>
@@ -434,7 +422,6 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
                   </div>
                 </div>
               </>
-            )}
           </aside>
         </div>
       </section>
@@ -446,7 +433,6 @@ function StatusLine({ status, retryDue, inline = false }: { status: ExerciseStat
   const text: Record<ExerciseStatus, string> = {
     new: "Not started.",
     in_progress: "In progress.",
-    needs_explain: "Tests pass. Now explain your solution.",
     waiting_retry: `Solved with help. It comes back on ${retryDue} to be solved again without help.`,
     retry_due: "Come-back day: solve it again from scratch, with no hints.",
     done: "Done: passed without help and explained.",

@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def _check(xs: list[float], ys: list[float]) -> None:
     if len(xs) != len(ys) or not xs:
         raise ValueError("xs and ys must be non-empty and the same length")

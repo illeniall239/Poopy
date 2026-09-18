@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def shipping_cost(subtotal_cents: int, weight_kg: float, express: bool) -> int:
     if weight_kg > 30:
         return -1

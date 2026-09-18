@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def matrix_rank(a: list[list[float]], tol: float = 1e-9) -> int:
     m = [[float(x) for x in row] for row in a]
     rows, cols = len(m), len(m[0]) if m else 0

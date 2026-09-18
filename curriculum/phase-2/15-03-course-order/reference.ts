@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function courseOrder(numCourses: number, prerequisites: [number, number][]): number[] {
   const unlocks: number[][] = Array.from({ length: numCourses }, () => []);
   const inDegree = new Array<number>(numCourses).fill(0);

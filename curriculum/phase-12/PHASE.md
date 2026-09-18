@@ -3,9 +3,9 @@
 80 hours over about 4½ weeks, 15 Topics. At the end the Learner builds a reliable, observable LLM agent service in Python (LangGraph, FastAPI) and integrates it into a TypeScript full-stack app, with evals, tracing and guardrails they can defend. Python, uv, NumPy/pandas and PyTorch are assumed from Phases 7–11; how LLMs work inside (tokens, KV cache, quantization theory) from Phase 10.
 
 Every Topic below lists:
-- **Learned when** — the observable ability the Learner must show (plus the standard rule: Explain-back, later Spaced Reviews).
+- **Learned when** — the observable ability the Learner must show (plus the standard rule: a passed Project Review, then later Spaced Reviews).
 - **Teach** — the concepts the Tutor draws out through questions. The Tutor never lectures them wholesale.
-- **Probe** — misconceptions the Tutor actively tests for during Explain-back and Spaced Reviews.
+- **Probe** — misconceptions the Tutor actively tests for during lessons and Spaced Reviews.
 - **Practice** — hands-on work in the Learner's own editor and project, not in-app Exercises. Says what to build or break and how the Learner knows it works.
 - **Sources** — the official pages the Tutor teaches against; current on 2026-09-18.
 

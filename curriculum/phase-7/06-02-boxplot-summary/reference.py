@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def _percentile(sorted_vals: list[float], p: float) -> float:
     pos = p * (len(sorted_vals) - 1)
     lo = int(pos)

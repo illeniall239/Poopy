@@ -20,7 +20,7 @@ import {
   type ExerciseState,
 } from "@/lib/progress.ts";
 import {
-  gradeExplainPrompt, gradeReviewPrompt, gradeSchema, reviewQuestionPrompt, reviewQuestionSchema, type Grade,
+  gradeReviewPrompt, gradeSchema, reviewQuestionPrompt, reviewQuestionSchema, type Grade,
   PLAN_READY,
 } from "@/lib/tutor.ts";
 
@@ -100,30 +100,8 @@ export async function startRetry(exerciseId: string) {
   clearThread(`plan:${exerciseId}`);
   clearThread(`exercise:${exerciseId}`);
   clearThread(`worked:${exerciseId}`);
+  clearThread(`breakdown:${exerciseId}`);
   revalidatePath("/");
-}
-
-export async function finishExplaining(exerciseId: string): Promise<Grade & { topicLearned: boolean; provider: string; status: string }> {
-  const ex = requireExercise(exerciseId);
-  const state = stateOf(exerciseId);
-  if (!state.tests_passed_at || !state.code) throw new Error("Pass the tests before explaining.");
-  const history = getMessages(`explain:${exerciseId}`);
-  if (!history.some((m) => m.role === "learner")) {
-    return { passed: false, feedback: "Answer the Tutor's questions first.", misconceptions: [], topicLearned: false, provider: "none", status: "needs_explain" };
-  }
-  const p = gradeExplainPrompt(ex, state.code, history);
-  const { value, provider } = await jsonReply<Grade>(p.system, p.messages, gradeSchema);
-  for (const m of value.misconceptions) logMistake(ex.topicId, m, "explain-back");
-  let saved = state;
-  if (value.passed) {
-    saved = { ...state, explain_passed_at: new Date().toISOString() };
-    saveExerciseState(saved);
-  } else {
-    clearThread(`explain:${exerciseId}`); // a fresh round of questions; the feedback is shown to the Learner above it
-  }
-  const topicLearned = value.passed ? checkTopicLearned(ex.topicId) : false;
-  revalidatePath("/");
-  return { ...value, topicLearned, provider, status: exerciseStatus(saved, localToday()) };
 }
 
 export async function markTeachDone(topicId: string) {

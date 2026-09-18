@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def _check(*ps: float) -> None:
     if any(not 0.0 <= p <= 1.0 for p in ps):
         raise ValueError("probabilities must lie in [0, 1]")

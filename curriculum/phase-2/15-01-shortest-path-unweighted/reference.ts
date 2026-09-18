@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function shortestPath(n: number, edges: [number, number][], start: number, end: number): number {
   const neighbors: number[][] = Array.from({ length: n }, () => []);
   for (const [a, b] of edges) {

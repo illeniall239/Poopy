@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 class SparseMatrix:
     def __init__(self, rows: int, cols: int) -> None:
         self._cells: list[dict[int, int]] = [{} for _ in range(rows)]

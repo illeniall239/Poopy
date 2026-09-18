@@ -3,9 +3,9 @@
 72 hours over 4 weeks, 12 Topics. At the end the Learner builds an accessible, responsive, fast frontend in Next.js 16 that talks to the Phase 3 API, and can say where every piece of it runs and why.
 
 Every Topic below lists:
-- **Learned when** — the observable ability the Learner must show (plus the standard rule: Explain-back, later Spaced Reviews).
+- **Learned when** — the observable ability the Learner must show (plus the standard rule: a passed Project Review, then later Spaced Reviews).
 - **Teach** — the concepts the Tutor draws out through questions. The Tutor never lectures them wholesale.
-- **Probe** — misconceptions the Tutor actively tests for during Explain-back and Spaced Reviews.
+- **Probe** — misconceptions the Tutor actively tests for during lessons and Spaced Reviews.
 - **Practice** — hands-on work in the Learner's own editor and project, not in-app Exercises. Says what to build or break and how the Learner knows it works.
 - **Sources** — the official pages the Tutor teaches against; current on 2026-09-17.
 

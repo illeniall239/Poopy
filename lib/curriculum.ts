@@ -17,7 +17,7 @@ export type Exercise = {
   starter: string; // TypeScript
   test: string; // TypeScript
   // Per language, where that language's files exist. javascript is derived from typescript (types stripped).
-  languages: Partial<Record<Language, { starter: string; test: string }>>;
+  languages: Partial<Record<Language, { starter: string; test: string; reference?: string }>>;
 };
 
 export type Topic = {
@@ -137,9 +137,13 @@ export function loadCurriculum(root = ROOT): Curriculum {
         for (const lang of LANGUAGE_IDS) {
           const files = LANGUAGES[lang].files;
           if (!files || !existsSync(join(folder, files.starter))) continue;
-          langs[lang] = { starter: read(files.starter), test: read(files.test) };
+          const reference = existsSync(join(folder, files.reference)) ? read(files.reference) : undefined;
+          langs[lang] = { starter: read(files.starter), test: read(files.test), reference };
         }
-        if (langs.typescript) langs.javascript = { starter: stripTypes(langs.typescript.starter), test: langs.typescript.test };
+        if (langs.typescript) {
+          const ts = langs.typescript;
+          langs.javascript = { starter: stripTypes(ts.starter), test: ts.test, reference: ts.reference ? stripTypes(ts.reference) : undefined };
+        }
         const first = Object.values(langs)[0];
         if (!first) throw new Error(`Exercise ${exId} has no starter file in any language`);
         const ex = parseExercise(read("exercise.md"), exId, topic.id, first.starter, first.test);

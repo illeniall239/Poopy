@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def _reverse(values: list[int], start: int, end: int) -> None:
     while start < end:
         values[start], values[end] = values[end], values[start]

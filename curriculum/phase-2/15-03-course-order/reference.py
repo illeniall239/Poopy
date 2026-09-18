@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def course_order(num_courses: int, prerequisites: list[list[int]]) -> list[int]:
     unlocks: list[list[int]] = [[] for _ in range(num_courses)]
     in_degree = [0] * num_courses

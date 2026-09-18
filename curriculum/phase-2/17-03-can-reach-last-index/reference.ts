@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function canReachLastIndex(jumps: number[]): boolean {
   let farthest = 0;
   for (let i = 0; i <= farthest && i < jumps.length; i++) {

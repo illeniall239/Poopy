@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def pair_with_target_sum(values: list[int], target: int) -> list[int]:
     first_index_of: dict[int, int] = {}
     for j, value in enumerate(values):

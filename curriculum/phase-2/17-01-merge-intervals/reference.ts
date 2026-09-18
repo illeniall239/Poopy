@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function mergeIntervals(intervals: [number, number][]): [number, number][] {
   const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
   const merged: [number, number][] = [];

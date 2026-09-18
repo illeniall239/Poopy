@@ -114,7 +114,7 @@ export function Chat({ kind, id, initial, autoStart = false, placeholder = "Repl
       </div>
       {notice && <p className="mt-2 rounded bg-warn-soft px-3 py-2 text-sm">{notice}</p>}
       {error && <p className="mt-2 rounded bg-bad-soft px-3 py-2 text-sm" role="alert">{error}</p>}
-      {kind !== "interview" && kind !== "explain" && kind !== "worked" && (
+      {kind !== "interview" && kind !== "breakdown" && kind !== "worked" && (
         <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Ask the Tutor to explain">
           {QUICK_ASKS.map(([label, text]) => (
             <button key={label} type="button" disabled={busy} onClick={() => void send(text)} className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted transition-colors hover:border-accent hover:text-ink disabled:opacity-50">

@@ -4,7 +4,8 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { ExerciseState, Review, TopicState } from "./progress.ts";
 
-const DATA_DIR = join(process.cwd(), "data");
+// POOPY_DATA_DIR points tests at a throwaway folder so they never touch the Learner's real progress.
+export const DATA_DIR = process.env.POOPY_DATA_DIR || join(process.cwd(), "data");
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);

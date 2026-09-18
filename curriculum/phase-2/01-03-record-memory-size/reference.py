@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 SIZES = {"bool": 1, "i8": 1, "i16": 2, "i32": 4, "f32": 4, "i64": 8, "f64": 8, "ptr": 8}
 
 

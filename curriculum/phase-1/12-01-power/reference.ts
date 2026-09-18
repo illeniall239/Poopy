@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function power(base: number, exp: number): number {
   if (exp === 0) return 1;
   const half = power(base, Math.floor(exp / 2));

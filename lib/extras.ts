@@ -6,9 +6,9 @@ import { getTopic, loadCurriculum, parseExercise, stripTypes, type Exercise, typ
 import { LANGUAGES, type Language } from "./languages.ts";
 import { jsonReply } from "./llm.ts";
 import { runTests } from "./runner.ts";
-import { topicMistakes } from "./db.ts";
+import { DATA_DIR, topicMistakes } from "./db.ts";
 
-const EXTRA_DIR = join(process.cwd(), "data", "extra");
+const EXTRA_DIR = join(DATA_DIR, "extra");
 export const isExtraId = (id: string) => id.startsWith("x-");
 
 // data/extra/<topicId>/<slug>/{exercise.md, starter.<ext>, test.<ext>, reference.<ext>}
@@ -102,7 +102,7 @@ ${exemplarFiles}
 ## Requirements
 - Difficulty 2 or 3 of 3: a real step up from the built-in exercises, still one function or small class.
 - Problem text names the function(s) exactly as in the starter and states every tested behaviour (empty input, ordering, ties, errors).
-- Hints: exactly 4 guiding questions, each more specific, none revealing the solution. Explain-back: 3–4 questions targeting the misconceptions above (and complexity when relevant).
+- Hints: exactly 4 guiding questions, each more specific, none revealing the solution. Explain-back: 3–4 questions targeting the misconceptions (the Breakdown answers them after the Learner solves it) above (and complexity when relevant).
 - Tests must fail against the starter and pass against the reference.
 ${extraNote}`;
 

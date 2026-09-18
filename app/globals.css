@@ -75,3 +75,10 @@ body {
 .md pre code { background: none; border: 0; padding: 0; font-size: 13px; }
 .md a { color: var(--accent); text-decoration: underline; }
 .md strong { font-weight: 650; }
+.md table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.md th, .md td { border: 1px solid var(--line); padding: 0.4em 0.75em; text-align: left; vertical-align: top; }
+.md th { background: var(--ground); font-weight: 600; white-space: nowrap; }
+.md tr:nth-child(even) td { background: color-mix(in srgb, var(--ground) 45%, transparent); }
+.md td code, .md th code { white-space: nowrap; }
+.md hr { border: 0; border-top: 1px solid var(--line); }
+.md blockquote { border-left: 3px solid var(--line); padding-left: 0.9em; color: var(--muted); }

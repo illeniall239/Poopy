@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function climbWays(n: number): number {
   let twoBelow = 1; // ways to reach step i - 2
   let oneBelow = 1; // ways to reach step i - 1

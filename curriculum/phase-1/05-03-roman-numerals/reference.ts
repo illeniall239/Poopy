@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 function repeat(symbol: string, times: number): string {
   let result = "";
   for (let i = 0; i < times; i++) result += symbol;

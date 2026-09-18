@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 public class Solution {
     public static double celsiusToFahrenheit(double celsius) {
         return Math.round((celsius * 9 / 5 + 32) * 10) / 10.0;

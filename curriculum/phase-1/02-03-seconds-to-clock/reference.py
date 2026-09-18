@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def to_clock(total_seconds: int) -> str:
     hours = total_seconds // 3600
     minutes = total_seconds // 60 % 60

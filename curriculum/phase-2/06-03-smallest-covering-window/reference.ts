@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function smallestCoveringWindow(s: string, t: string): string {
   if (t.length === 0 || s.length < t.length) return "";
   const need = new Map<string, number>();

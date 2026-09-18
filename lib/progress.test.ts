@@ -16,17 +16,14 @@ test("addDays crosses month ends", () => {
   assert.equal(addDays("2026-09-29", 3), "2026-10-02");
 });
 
-test("clean pass then explain-back is done", () => {
-  let s = onTestsPassed(blank("a"), "t", today);
-  assert.equal(exerciseStatus(s, today), "needs_explain");
-  s = { ...s, explain_passed_at: "t" };
+test("a clean pass completes the exercise straight away", () => {
+  const s = onTestsPassed(blank("a"), "t", today);
   assert.equal(exerciseStatus(s, today), "done");
 });
 
-test("a pass with a hint needs explaining, then waits 3 days, then must be redone clean", () => {
+test("a pass with a hint waits 3 days, then must be redone clean", () => {
   let s = onTestsPassed({ ...blank("a"), hints_shown: 1 }, "t", today);
   assert.equal(s.retry_due, "2026-09-20");
-  s = { ...s, explain_passed_at: "t" };
   assert.equal(exerciseStatus(s, today), "waiting_retry");
   assert.equal(exerciseStatus(s, "2026-09-20"), "retry_due");
   s = startRetry(s, "starter");
@@ -54,7 +51,7 @@ test("plan: teach comes before exercises, then exercises of the current topic on
 test("plan: a topic waiting only on retries lets the learner move on, and due reviews come first", () => {
   const topics = [topic(1, ["a"]), topic(2, ["c"])];
   const taught = new Map<string, TopicState>([["1.1", { topic_id: "1.1", teach_done_at: "t", learned_at: null }]]);
-  const waiting = { ...onTestsPassed({ ...blank("a"), hints_shown: 2 }, "t", today), explain_passed_at: "t" };
+  const waiting = onTestsPassed({ ...blank("a"), hints_shown: 2 }, "t", today);
   const reviews = [{ topic_id: "1.0", due_date: today, step: 0, last_done: null }];
   const plan = planToday(topics, taught, new Map([["a", waiting]]), reviews, today);
   assert.deepEqual(plan, [{ kind: "review", topicId: "1.0" }, { kind: "teach", topicId: "1.2" }]);

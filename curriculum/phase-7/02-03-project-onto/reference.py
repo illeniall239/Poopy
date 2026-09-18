@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def project(a: list[float], b: list[float]) -> tuple[list[float], list[float]]:
     if len(a) != len(b):
         raise ValueError("length mismatch")

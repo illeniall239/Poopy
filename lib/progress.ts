@@ -8,7 +8,7 @@ export type ExerciseState = {
   worked_example: number; // 0/1: a Worked Example was shown (the Exercise then Needed Help)
   tests_passed_at: string | null;
   clean_pass: number; // 0/1: tests passed with no hints and no Worked Example
-  explain_passed_at: string | null;
+  explain_passed_at: string | null; // unused since the Breakdown replaced Explain-back (2026-09-19); kept for old rows
   retry_due: string | null; // YYYY-MM-DD: when a helped Exercise comes back
   plan_done_at?: string | null; // the Learner's plan was checked by the Tutor; the editor is locked until then
   plan_text?: string | null; // the Learner's final plan, shown beside the editor
@@ -17,7 +17,7 @@ export type ExerciseState = {
 export type TopicState = { topic_id: string; teach_done_at: string | null; learned_at: string | null; practice_passed_at?: string | null };
 export type Review = { topic_id: string; due_date: string; step: number; last_done: string | null };
 
-export type ExerciseStatus = "new" | "in_progress" | "needs_explain" | "waiting_retry" | "retry_due" | "done";
+export type ExerciseStatus = "new" | "in_progress" | "waiting_retry" | "retry_due" | "done";
 
 export const RETRY_AFTER_DAYS = 3;
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60];
@@ -35,8 +35,7 @@ export function localToday(now = new Date()): string {
 
 export function exerciseStatus(s: ExerciseState | undefined, today: string): ExerciseStatus {
   if (!s) return "new";
-  if (s.tests_passed_at && !s.explain_passed_at) return "needs_explain";
-  if (s.clean_pass && s.explain_passed_at) return "done";
+  if (s.tests_passed_at && s.clean_pass) return "done";
   if (s.retry_due) return s.retry_due <= today ? "retry_due" : "waiting_retry";
   return s.code === null ? "new" : "in_progress";
 }
@@ -112,7 +111,7 @@ export function planToday(
     }
     const open = t.exerciseIds
       .map((id) => ({ id, status: exerciseStatus(exerciseStates.get(id), today) }))
-      .filter((e) => e.status === "new" || e.status === "in_progress" || e.status === "needs_explain");
+      .filter((e) => e.status === "new" || e.status === "in_progress");
     if (open.length) {
       for (const e of open) plan.push({ kind: "exercise", exerciseId: e.id, status: e.status });
       break;

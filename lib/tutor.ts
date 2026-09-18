@@ -4,7 +4,7 @@ import type { ChatMessage } from "./llm.ts";
 import type { Message } from "./db.ts";
 import { localToday } from "./progress.ts";
 
-export type ChatKind = "teach" | "plan" | "exercise" | "explain" | "worked" | "recap" | "interview";
+export type ChatKind = "teach" | "plan" | "exercise" | "breakdown" | "worked" | "recap" | "interview";
 export const threadFor = (kind: ChatKind, id: string) => `${kind}:${kind === "recap" ? localToday() : id}`;
 
 const SOCRATIC = `You are the Tutor in a personal programming-tutor app. The Learner is training to become a full-stack TypeScript developer with strong AI foundations. They can write basic scripts but tend to freeze on a blank problem.
@@ -124,8 +124,12 @@ Never mention or write the Exercise's solution.`;
   return { system, messages: [{ role: "user", content: context }] };
 }
 
-export function explainPrompt(ex: Exercise, code: string, history: Message[], language: Language, plan?: string | null): Prompt {
-  const context = `## Explain-back for: ${ex.title}
+const BREAKDOWN = `You write the Breakdown a programming Learner reads right after solving an Exercise: a complete, honest walkthrough of the problem and its solution. The Learner has already passed the tests, so explaining the full solution is the point now — this is not a Socratic turn. Write like an excellent teacher: plain words, concrete values, no filler, no empty praise. Work everything out before writing: the final text must read as a clean, finished document with no self-corrections ("wait", "actually") and no thinking aloud.`;
+
+// The reference is the verified solution from the curriculum; shown after the Learner's own passing solution.
+export function breakdownPrompt(ex: Exercise, code: string, language: Language, reference: string | undefined, plan?: string | null): Prompt {
+  const ref = reference?.replace(/^(\/\/|#)[^\n]*Reference solution[^\n]*\n/, "").trim();
+  const content = `## Exercise: ${ex.title}
 
 ${languageNote(language)}
 
@@ -135,12 +139,22 @@ ${ex.body}
 \`\`\`${fence(language)}
 ${code}
 \`\`\`
+${plan ? `\n## The Learner's plan (made before coding)\n${plan}\n` : ""}${ref ? `\n## Reference solution (verified; reproduce it EXACTLY, character for character)\n\`\`\`${fence(language)}\n${ref}\n\`\`\`\n` : ""}
+## Questions this Exercise was designed to make them understand
+${ex.explainBack.map((q) => `- ${q}`).join("\n")}
 
-${plan ? `## The Learner's plan (made before coding)\n${plan}\n\nAfter the questions below, ask one more: where did the code end up different from the plan, and why?\n\n` : ""}## Questions to ask, in order
-${ex.explainBack.map((q, i) => `${i + 1}. ${q}`).join("\n")}
-
-The Learner's tests pass. Now they must explain their own solution. Ask the questions one at a time. After each answer, ask a short follow-up if the answer is vague, memorised-sounding or wrong, and then move on. Never give the answers. When every question has been answered, say exactly: "That's all my questions — press **Finish explaining**."${history.length ? "" : "\n\nAsk the first question now."}`;
-  return { system: SOCRATIC, messages: [{ role: "user", content: context }, ...toChat(history)] };
+Write the Breakdown in Markdown with exactly these sections:
+## The problem, in one sentence
+## The key idea
+(the insight that makes it solvable; one everyday analogy if it helps)
+## Walking through your solution
+(their code, part by part, with one small input traced step by step in a table)
+${ref ? "## A reference solution\n(the reference code above in a fenced block, unchanged, then what each part does)\n## Comparing the two\n(correctness on edge cases, time and space complexity of each, readability; say plainly when theirs is as good or better)" : "## Could it be better?\n(time and space complexity, edge cases, readability)"}
+${plan ? "## Your plan vs your code\n(where the code followed the plan and where it changed, and whether the change was good)\n" : ""}## The questions, answered
+(answer each question listed above in two or three sentences)
+## Remember this
+(2–3 bullet takeaways that carry over to other problems)`;
+  return { system: BREAKDOWN, messages: [{ role: "user", content }] };
 }
 
 export const gradeSchema = {
@@ -156,17 +170,6 @@ export const gradeSchema = {
 export type Grade = { passed: boolean; feedback: string; misconceptions: string[] };
 
 const GRADER = `You grade a programming Learner's understanding, strictly but fairly. Pass only when their own words show real understanding; a correct buzzword without reasoning is not enough. Feedback: 2–4 sentences addressed to the Learner, naming what was solid and what was missing. List specific misconceptions (empty list if none). Never include solution code for their Exercise.`;
-
-export function gradeExplainPrompt(ex: Exercise, code: string, history: Message[]): Prompt {
-  const transcript = history.map((m) => `${m.role === "learner" ? "Learner" : "Tutor"}: ${m.content}`).join("\n\n");
-  return {
-    system: GRADER,
-    messages: [{
-      role: "user",
-      content: `Exercise: ${ex.title}\n\nQuestions that had to be covered:\n${ex.explainBack.map((q) => `- ${q}`).join("\n")}\n\nThe Learner's code:\n\`\`\`ts\n${code}\n\`\`\`\n\nExplain-back conversation:\n${transcript}\n\nDid the Learner explain all the questions with understanding? If some questions were never answered, that is not a pass.`,
-    }],
-  };
-}
 
 export const reviewQuestionSchema = { type: "object", properties: { question: { type: "string" } }, required: ["question"] };
 

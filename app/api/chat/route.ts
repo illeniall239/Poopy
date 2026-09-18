@@ -4,7 +4,7 @@ import { addMessage, getExerciseState, getInterview, getMessages, saveExerciseSt
 import { interviewPrompt, isInterviewKind } from "@/lib/interview.ts";
 import { isLanguage } from "@/lib/languages.ts";
 import { streamReply } from "@/lib/llm.ts";
-import { explainPrompt, exercisePrompt, planPrompt, recapPrompt, teachPrompt, threadFor, workedExamplePrompt, type ChatKind, type Prompt, type RunInfo } from "@/lib/tutor.ts";
+import { breakdownPrompt, exercisePrompt, planPrompt, recapPrompt, teachPrompt, threadFor, workedExamplePrompt, type ChatKind, type Prompt, type RunInfo } from "@/lib/tutor.ts";
 import { todaySummary } from "@/app/actions.ts";
 import { currentLanguage } from "@/lib/languages.ts";
 
@@ -34,9 +34,9 @@ async function buildPrompt(body: Body, thread: string): Promise<Prompt> {
   if (body.kind === "exercise") {
     return exercisePrompt(ex, body.code ?? state?.code ?? ex.languages[language]!.starter, state?.hints_shown ?? 0, body.lastRun ?? null, history, language, state?.plan_text);
   }
-  if (body.kind === "explain") {
-    if (!state?.tests_passed_at || !state.code) throw new Error("Pass the tests before explaining.");
-    return explainPrompt(ex, state.code, history, language, state.plan_text);
+  if (body.kind === "breakdown") {
+    if (!state?.tests_passed_at || !state.code) throw new Error("Pass the tests to unlock the Breakdown.");
+    return breakdownPrompt(ex, state.code, language, ex.languages[language]?.reference, state.plan_text);
   }
   // worked
   if (!state || state.hints_shown < ex.hints.length) throw new Error("Use all the hints before asking for a Worked Example.");
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        if (body.kind === "worked") {
+        if (body.kind === "worked" || body.kind === "breakdown") {
           const existing = getMessages(thread).find((m) => m.role === "tutor");
           if (existing) {
             controller.enqueue(line({ provider: existing.provider }));

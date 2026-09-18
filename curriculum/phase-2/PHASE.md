@@ -3,12 +3,12 @@
 71 hours over about 4 weeks, 17 Topics. For a Learner who has finished Phase 1 (TypeScript fundamentals, recursion, generics, `Map`/`Set`) and is preparing for junior full-stack interviews.
 
 Every Topic below lists:
-- **Learned when** — what the Learner must show, on top of the standard rule (Exercises pass without hints, Explain-back, later Spaced Reviews).
+- **Learned when** — what the Learner must show, on top of the standard rule (Exercises pass without hints, then later Spaced Reviews).
 - **Teach** — the concepts the Tutor draws out through questions. The Tutor never lectures them wholesale.
-- **Probe** — misconceptions the Tutor actively tests for during Explain-back and Spaced Reviews.
+- **Probe** — misconceptions the Tutor actively tests for during lessons and Spaced Reviews.
 - **Exercises** — folder names under this directory, in order.
 
-Exercise folder layout: `exercise.md` (problem, examples, constraints including the required time and space complexity, Hint Ladder, Explain-back questions), then per language a starter, a test and a reference: `starter.ts`/`test.ts`/`reference.ts` (TypeScript; JavaScript is derived from it), `starter.py`/`test.py`/`reference.py`, `starter.java`/`test.java`/`reference.java`. Where a complexity is required, the test includes a large input that a slower solution cannot finish in time. Node types the problem needs (list nodes, tree nodes) are defined in the starter. The reference is only used by `scripts/verify-exercises.mjs` to prove the tests are correct; the Tutor never shows it. The problem text is written in TypeScript terms; the Tutor translates for other languages.
+Exercise folder layout: `exercise.md` (problem, examples, constraints including the required time and space complexity, Hint Ladder, and the questions the Breakdown answers), then per language a starter, a test and a reference: `starter.ts`/`test.ts`/`reference.ts` (TypeScript; JavaScript is derived from it), `starter.py`/`test.py`/`reference.py`, `starter.java`/`test.java`/`reference.java`. Where a complexity is required, the test includes a large input that a slower solution cannot finish in time. Node types the problem needs (list nodes, tree nodes) are defined in the starter. The reference is only used by `scripts/verify-exercises.mjs` to prove the tests are correct; it is shown in the Breakdown once the Learner's own solution passes. The problem text is written in TypeScript terms; the Tutor translates for other languages.
 
 ---
 

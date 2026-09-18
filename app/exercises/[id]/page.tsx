@@ -40,7 +40,7 @@ export default async function ExercisePage(props: PageProps<"/exercises/[id]">) 
         retryDue: state?.retry_due ?? null,
         workedExample: thread("worked")[0]?.content ?? null,
         exerciseChat: thread("exercise"),
-        explainChat: thread("explain"),
+        breakdown: thread("breakdown")[0]?.content ?? null,
       }}
     />
   );

@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def solve(a: list[list[float]], b: list[float]) -> list[float]:
     n = len(a)
     if any(len(row) != n for row in a) or len(b) != n:

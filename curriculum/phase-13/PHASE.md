@@ -3,9 +3,9 @@
 34 hours over about 2 weeks, 9 Topics. At the end the Learner reasons through a junior-level system design question out loud, from requirements to a diagram with named trade-offs, including one that involves a model, and presents three portfolio projects and a work history convincingly.
 
 Every Topic below lists:
-- **Learned when** — the observable ability the Learner must show (plus the standard rule: Explain-back, later Spaced Reviews).
+- **Learned when** — the observable ability the Learner must show (plus the standard rule: a passed Project Review, then later Spaced Reviews).
 - **Teach** — the concepts the Tutor draws out through questions. The Tutor never lectures them wholesale.
-- **Probe** — misconceptions the Tutor actively tests for during Explain-back and Spaced Reviews.
+- **Probe** — misconceptions the Tutor actively tests for during lessons and Spaced Reviews.
 - **Practice** — hands-on work in the Learner's own editor and notes, not in-app Exercises. Says what to produce and how the Learner knows it holds up.
 - **Sources** — the pages the Tutor teaches against; current on 2026-09-18. Book chapters named in the Map (Kleppmann; Xu) are read alongside them.
 

@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def binary_search(sorted_values: list[int], target: int) -> int:
     lo, hi = 0, len(sorted_values) - 1
     while lo <= hi:

@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def min_shred_speed(stacks: list[int], h: int) -> int:
     lo, hi = 1, max(stacks)
     while lo < hi:

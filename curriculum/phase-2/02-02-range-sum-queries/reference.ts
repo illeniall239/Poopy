@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function rangeSums(values: number[], queries: [number, number][]): number[] {
   // prefix[k] is the sum of the first k values.
   const prefix = new Array<number>(values.length + 1);

@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
 
 export function caesarShift(text: string, shift: number): string {

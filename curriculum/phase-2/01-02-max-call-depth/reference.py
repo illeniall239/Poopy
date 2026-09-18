@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def max_call_depth(calls: dict[str, list[str]], entry: str) -> int:
     finished: dict[str, int] = {}
     on_stack: set[str] = set()

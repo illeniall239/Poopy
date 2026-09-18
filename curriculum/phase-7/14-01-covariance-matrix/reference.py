@@ -1,4 +1,4 @@
-# Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+# Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 def center(rows: list[list[float]]) -> list[list[float]]:
     if not rows or any(len(r) != len(rows[0]) for r in rows):
         raise ValueError("rows must be non-empty and rectangular")

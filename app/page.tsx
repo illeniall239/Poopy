@@ -9,7 +9,6 @@ import { CurriculumCards } from "@/components/CurriculumCards";
 const statusLabel: Record<string, string> = {
   new: "Not started",
   in_progress: "In progress",
-  needs_explain: "Explain your solution",
 };
 
 export default async function Home() {

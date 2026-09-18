@@ -1,4 +1,4 @@
-// Reference solution: only used by scripts/verify-exercises.mjs. The Tutor never shows it (Socratic rule).
+// Reference solution: only used by scripts/verify-exercises.mjs. Shown in the Breakdown only after the Learner's own solution passes.
 export function shippingCost(subtotalCents: number, weightKg: number, express: boolean): number {
   if (weightKg > 30) return -1;
   if (subtotalCents >= 5000 && !express && weightKg <= 20) return 0;
