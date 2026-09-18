@@ -1,6 +1,8 @@
 // Streams a Tutor reply as NDJSON lines: {provider} | {notice} | {text} ... then {done} or {error}.
 import { getExercise, getTopic } from "@/lib/curriculum.ts";
-import { addMessage, getExerciseState, getMessages, saveExerciseState } from "@/lib/db.ts";
+import { addMessage, getExerciseState, getInterview, getMessages, saveExerciseState, saveInterviewCode } from "@/lib/db.ts";
+import { interviewPrompt, isInterviewKind } from "@/lib/interview.ts";
+import { isLanguage } from "@/lib/languages.ts";
 import { streamReply } from "@/lib/llm.ts";
 import { explainPrompt, exercisePrompt, planPrompt, recapPrompt, teachPrompt, threadFor, workedExamplePrompt, type ChatKind, type Prompt, type RunInfo } from "@/lib/tutor.ts";
 import { todaySummary } from "@/app/actions.ts";
@@ -16,6 +18,13 @@ async function buildPrompt(body: Body, thread: string): Promise<Prompt> {
     return teachPrompt(topic, history);
   }
   if (body.kind === "recap") return recapPrompt(await todaySummary(), history);
+  if (body.kind === "interview") {
+    const iv = getInterview(Number(body.id));
+    if (!iv || !isInterviewKind(iv.kind)) throw new Error("Unknown interview");
+    if (iv.ended_at) throw new Error("This interview has ended.");
+    if (body.code !== undefined) saveInterviewCode(iv.id, body.code);
+    return interviewPrompt(iv.kind, iv.language && isLanguage(iv.language) ? iv.language : "typescript", history, body.code ?? iv.code);
+  }
 
   const ex = getExercise(body.id);
   if (!ex) throw new Error("Unknown exercise");

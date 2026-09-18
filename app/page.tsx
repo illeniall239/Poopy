@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { loadCurriculum } from "@/lib/curriculum.ts";
-import { allExerciseStates, allReviews, allTopicStates } from "@/lib/db.ts";
-import { exerciseStatus, isTopicLearned, localToday, planToday, type PlanItem } from "@/lib/progress.ts";
+import { allDays, allExerciseStates, allReviews, allTopicStates, getDay, getMessages } from "@/lib/db.ts";
+import { currentStreak, exerciseStatus, isTopicLearned, localToday, planToday, type PlanItem } from "@/lib/progress.ts";
 import { dotClass } from "@/components/Sidebar";
 
 const statusLabel: Record<string, string> = {
@@ -24,11 +24,16 @@ export default async function Today() {
   const learned = topics.filter((t) => isTopicLearned(t, topicStates.get(t.id), exerciseStates, today)).length;
   const exercisesDone = [...exercises.keys()].filter((id) => exerciseStatus(exerciseStates.get(id), today) === "done").length;
 
+  const keptDays = new Set(allDays().filter((d) => d.kept).map((d) => d.date));
+  const streak = currentStreak(keptDays, today);
+  const keptToday = keptDays.has(today);
+  const passedToday = !!getDay(today)?.exercise_passed;
   const reviews = plan.filter((p): p is Extract<PlanItem, { kind: "review" }> => p.kind === "review");
   const retries = plan.filter((p): p is Extract<PlanItem, { kind: "retry" }> => p.kind === "retry");
   const teach = plan.find((p): p is Extract<PlanItem, { kind: "teach" }> => p.kind === "teach");
+  const practiceItem = plan.find((p): p is Extract<PlanItem, { kind: "practice" }> => p.kind === "practice");
   const exerciseItems = plan.filter((p): p is Extract<PlanItem, { kind: "exercise" }> => p.kind === "exercise");
-  const currentTopic = teach ? topicOf(teach.topicId) : exerciseItems[0] ? topicOf(exercises.get(exerciseItems[0].exerciseId)!.topicId) : null;
+  const currentTopic = teach ? topicOf(teach.topicId) : practiceItem ? topicOf(practiceItem.topicId) : exerciseItems[0] ? topicOf(exercises.get(exerciseItems[0].exerciseId)!.topicId) : null;
 
   return (
     <main className="grid gap-8 px-6 py-8 xl:px-10">
@@ -37,13 +42,21 @@ export default async function Today() {
           <p className="eyebrow">{new Date(`${today}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</p>
           <h1 className="font-display text-4xl font-bold">Today&apos;s Session</h1>
         </div>
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <Stat label="Streak" value={`${streak}d`} />
           <Stat label="Reviews due" value={reviews.length} />
           <Stat label="Come-backs" value={retries.length} />
           <Stat label="Topics learned" value={`${learned}/${topics.length}`} />
           <Stat label="Exercises done" value={`${exercisesDone}/${exercises.size}`} />
         </dl>
       </header>
+
+      {!keptToday && (
+        <p className="rounded-md bg-warn-soft px-4 py-3 text-[15px]" role="status">
+          <strong>{streak > 0 ? `Keep your ${streak}-day streak:` : "Start a streak:"}</strong>{" "}
+          {[!passedToday && "pass one exercise", reviews.length > 0 && `clear ${reviews.length} due review${reviews.length === 1 ? "" : "s"}`].filter(Boolean).join(" and ")} today.
+        </p>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         {/* Up next: the main work of the Session */}
@@ -71,7 +84,15 @@ export default async function Today() {
                       ))}
                     </ul>
                   </div>
-                  <Link href={`/topics/${currentTopic.id}`} className="btn btn-primary px-5 py-3 text-base">Start the lesson</Link>
+                  <Link href={`/topics/${currentTopic.id}`} className="btn btn-primary px-5 py-3 text-base">{getMessages(`teach:${currentTopic.id}`).some((m) => m.role === "learner") ? "Continue the lesson" : "Start the lesson"}</Link>
+                </div>
+              ) : practiceItem ? (
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                  <div className="grid gap-2">
+                    <p className="text-sm font-semibold">Practice in your own project</p>
+                    <p className="max-w-[75ch] text-[15px]">{currentTopic.practice}</p>
+                  </div>
+                  <Link href={`/topics/${currentTopic.id}`} className="btn btn-primary px-5 py-3 text-base">Get it reviewed</Link>
                 </div>
               ) : (
                 <div className="grid gap-3">

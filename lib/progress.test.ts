@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Topic } from "./curriculum.ts";
 import {
-  addDays, exerciseStatus, onTestsPassed, startRetry, planToday, reviewAfter, firstReview,
+  addDays, exerciseStatus, onTestsPassed, startRetry, planToday, reviewAfter, firstReview, currentStreak, isDayKept, isTopicLearned,
   type ExerciseState, type TopicState,
 } from "./progress.ts";
 
@@ -68,4 +68,23 @@ test("reviews: pass climbs the interval ladder, fail resets to tomorrow, reviewe
   r = reviewAfter(r, false, "2026-09-21");
   assert.deepEqual([r.step, r.due_date], [0, "2026-09-22"]);
   assert.deepEqual(planToday([], new Map(), new Map(), [{ ...r, due_date: "2026-09-21" }], "2026-09-21"), []);
+});
+
+test("streak counts consecutive kept days, allowing today to be still in progress", () => {
+  const kept = new Set(["2026-09-15", "2026-09-16"]);
+  assert.equal(currentStreak(kept, "2026-09-17"), 2); // today not kept yet: streak runs to yesterday
+  kept.add("2026-09-17");
+  assert.equal(currentStreak(kept, "2026-09-17"), 3);
+  assert.equal(currentStreak(new Set(["2026-09-15"]), "2026-09-17"), 0); // a missed day breaks it
+  assert.equal(isDayKept(true, 1), false);
+  assert.equal(isDayKept(true, 0), true);
+  assert.equal(isDayKept(false, 0), false);
+});
+
+test("practice topics need a passed Project Review, and the plan points at the practice", () => {
+  const practice: Topic = { ...topic(1, []), practice: "Build an API." };
+  const taught = { topic_id: "1.1", teach_done_at: "t", learned_at: null };
+  assert.equal(isTopicLearned(practice, taught, new Map(), today), false);
+  assert.equal(isTopicLearned(practice, { ...taught, practice_passed_at: "t" }, new Map(), today), true);
+  assert.deepEqual(planToday([practice], new Map([["1.1", taught]]), new Map(), [], today), [{ kind: "practice", topicId: "1.1" }]);
 });

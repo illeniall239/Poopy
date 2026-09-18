@@ -31,6 +31,34 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS messages_thread ON messages (thread, id);
+CREATE TABLE IF NOT EXISTS mistakes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id TEXT,
+  text TEXT NOT NULL,
+  source TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS sketches (exercise_id TEXT PRIMARY KEY, scene TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime('now')));
+CREATE TABLE IF NOT EXISTS days (date TEXT PRIMARY KEY, exercise_passed INTEGER NOT NULL DEFAULT 0, kept INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS interviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  language TEXT,
+  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  ended_at TEXT,
+  code TEXT,
+  feedback TEXT
+);
+CREATE TABLE IF NOT EXISTS project_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id TEXT NOT NULL,
+  folder TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  passed INTEGER NOT NULL,
+  result TEXT NOT NULL
+);
 `;
 
 // One connection per server process; survives Next.js dev hot reloads via globalThis.
@@ -46,6 +74,8 @@ export function db(): DatabaseSync {
     const cols = (d.prepare("PRAGMA table_info(exercise_state)").all() as { name: string }[]).map((c) => c.name);
     if (!cols.includes("plan_done_at")) d.exec("ALTER TABLE exercise_state ADD COLUMN plan_done_at TEXT");
     if (!cols.includes("plan_text")) d.exec("ALTER TABLE exercise_state ADD COLUMN plan_text TEXT");
+    const topicCols = (d.prepare("PRAGMA table_info(topic_state)").all() as { name: string }[]).map((c) => c.name);
+    if (!topicCols.includes("practice_passed_at")) d.exec("ALTER TABLE topic_state ADD COLUMN practice_passed_at TEXT");
     g.tutorDb = d;
   }
   return g.tutorDb;
@@ -90,7 +120,7 @@ export function allTopicStates() {
   return new Map(rows.map((r) => [r.topic_id, r]));
 }
 
-export function markTopic(topicId: string, column: "teach_done_at" | "learned_at") {
+export function markTopic(topicId: string, column: "teach_done_at" | "learned_at" | "practice_passed_at") {
   db().prepare(`INSERT INTO topic_state (topic_id, ${column}) VALUES (?, datetime('now'))
     ON CONFLICT(topic_id) DO UPDATE SET ${column} = COALESCE(${column}, excluded.${column})`).run(topicId);
 }
@@ -105,6 +135,58 @@ export function saveReview(r: Review) {
 
 // Full export for backups: every table as JSON.
 export function exportAll() {
-  const tables = ["settings", "exercise_state", "topic_state", "reviews", "messages"];
+  const tables = ["settings", "exercise_state", "topic_state", "reviews", "messages", "mistakes", "days", "interviews", "project_reviews", "sketches"];
   return Object.fromEntries(tables.map((t) => [t, db().prepare(`SELECT * FROM ${t}`).all()]));
 }
+
+// ---------- Mistake Log ----------
+export type Mistake = { id: number; topic_id: string | null; text: string; source: string; count: number; created_at: string; updated_at: string };
+
+// Same wording on the same topic counts up instead of adding a duplicate.
+export function logMistake(topicId: string | null, text: string, source: string) {
+  const clean = text.trim();
+  if (!clean) return;
+  const existing = db().prepare("SELECT id FROM mistakes WHERE lower(text) = lower(?) AND topic_id IS ?").get(clean, topicId) as { id: number } | undefined;
+  if (existing) db().prepare("UPDATE mistakes SET count = count + 1, source = ?, updated_at = datetime('now') WHERE id = ?").run(source, existing.id);
+  else db().prepare("INSERT INTO mistakes (topic_id, text, source) VALUES (?, ?, ?)").run(topicId, clean, source);
+}
+export const allMistakes = () => db().prepare("SELECT * FROM mistakes ORDER BY count DESC, updated_at DESC").all() as Mistake[];
+export const topicMistakes = (topicId: string) =>
+  db().prepare("SELECT * FROM mistakes WHERE topic_id = ? ORDER BY count DESC, updated_at DESC LIMIT 5").all(topicId) as Mistake[];
+export const addMistakeManual = (topicId: string | null, text: string) =>
+  db().prepare("INSERT INTO mistakes (topic_id, text, source) VALUES (?, ?, 'you')").run(topicId, text.trim());
+export const updateMistakeText = (id: number, text: string) => db().prepare("UPDATE mistakes SET text = ?, updated_at = datetime('now') WHERE id = ?").run(text.trim(), id);
+export const deleteMistake = (id: number) => db().prepare("DELETE FROM mistakes WHERE id = ?").run(id);
+
+// ---------- Streak days ----------
+export type Day = { date: string; exercise_passed: number; kept: number };
+export const allDays = () => db().prepare("SELECT * FROM days ORDER BY date").all() as Day[];
+export const getDay = (date: string) => db().prepare("SELECT * FROM days WHERE date = ?").get(date) as Day | undefined;
+export function saveDay(date: string, exercisePassed: boolean, kept: boolean) {
+  db().prepare(`INSERT INTO days (date, exercise_passed, kept) VALUES (?, ?, ?)
+    ON CONFLICT(date) DO UPDATE SET exercise_passed = excluded.exercise_passed, kept = excluded.kept`).run(date, exercisePassed ? 1 : 0, kept ? 1 : 0);
+}
+
+// ---------- Interviews ----------
+export type Interview = { id: number; kind: string; language: string | null; started_at: string; ended_at: string | null; code: string | null; feedback: string | null };
+export const createInterview = (kind: string, language: string) =>
+  Number(db().prepare("INSERT INTO interviews (kind, language) VALUES (?, ?)").run(kind, language).lastInsertRowid);
+export const getInterview = (id: number) => db().prepare("SELECT * FROM interviews WHERE id = ?").get(id) as Interview | undefined;
+export const allInterviews = () => db().prepare("SELECT * FROM interviews ORDER BY id DESC").all() as Interview[];
+export const saveInterviewCode = (id: number, code: string) => db().prepare("UPDATE interviews SET code = ? WHERE id = ?").run(code, id);
+export const endInterview = (id: number, feedback: string) =>
+  db().prepare("UPDATE interviews SET ended_at = datetime('now'), feedback = ? WHERE id = ?").run(feedback, id);
+
+// ---------- Project reviews ----------
+export type ProjectReview = { id: number; topic_id: string; folder: string; created_at: string; passed: number; result: string };
+export const addProjectReview = (topicId: string, folder: string, passed: boolean, result: string) =>
+  db().prepare("INSERT INTO project_reviews (topic_id, folder, passed, result) VALUES (?, ?, ?, ?)").run(topicId, folder, passed ? 1 : 0, result);
+export const projectReviews = (topicId: string) =>
+  db().prepare("SELECT * FROM project_reviews WHERE topic_id = ? ORDER BY id DESC").all(topicId) as ProjectReview[];
+
+// ---------- Sketchpad ----------
+export const getSketch = (exerciseId: string) =>
+  (db().prepare("SELECT scene FROM sketches WHERE exercise_id = ?").get(exerciseId) as { scene: string } | undefined)?.scene ?? null;
+export const saveSketchScene = (exerciseId: string, scene: string) =>
+  db().prepare(`INSERT INTO sketches (exercise_id, scene) VALUES (?, ?)
+    ON CONFLICT(exercise_id) DO UPDATE SET scene = excluded.scene, updated_at = datetime('now')`).run(exerciseId, scene);

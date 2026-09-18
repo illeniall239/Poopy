@@ -4,13 +4,19 @@ import { revalidatePath } from "next/cache";
 import { getExercise, getTopic, loadCurriculum } from "@/lib/curriculum.ts";
 import {
   addMessage, allReviews, allTopicStates, allExerciseStates, clearThread, getExerciseState, getMessages, getSetting,
-  markTopic, saveExerciseState, saveReview, setSetting,
+  markTopic, saveExerciseState, saveReview, setSetting, logMistake, topicMistakes, createInterview, getInterview, endInterview, saveInterviewCode, addProjectReview, saveSketchScene, getDay, saveDay, updateMistakeText, deleteMistake, addMistakeManual,
 } from "@/lib/db.ts";
 import { jsonReply, settingsDefaults } from "@/lib/llm.ts";
 import { runTests } from "@/lib/runner.ts";
 import { currentLanguage, isLanguage } from "@/lib/languages.ts";
+import { generateExtra } from "@/lib/extras.ts";
+import { GENERAL_SKETCH } from "@/lib/sketch.ts";
+import { collectProject, reviewPrompt, reviewSchema, type ReviewResult } from "@/lib/projects.ts";
+import { needsProjectReview } from "@/lib/progress.ts";
+import { feedbackPrompt, feedbackSchema, isInterviewKind, type Feedback } from "@/lib/interview.ts";
+import { redirect } from "next/navigation";
 import {
-  exerciseStatus, firstReview, isTopicLearned, localToday, onTestsPassed, reviewAfter, startRetry as retryState,
+  exerciseStatus, firstReview, isTopicLearned, isDayKept, localToday, onTestsPassed, reviewAfter, startRetry as retryState,
   type ExerciseState,
 } from "@/lib/progress.ts";
 import {
@@ -30,6 +36,14 @@ function stateOf(id: string): ExerciseState {
   };
 }
 
+// Streak bookkeeping: re-evaluate today after anything that can keep it.
+function refreshToday(exercisePassedNow = false) {
+  const today = localToday();
+  const exercisePassed = exercisePassedNow || !!getDay(today)?.exercise_passed;
+  const stillDue = allReviews().filter((r) => r.due_date <= today && r.last_done !== today).length;
+  saveDay(today, exercisePassed, isDayKept(exercisePassed, stillDue));
+}
+
 function checkTopicLearned(topicId: string) {
   const topic = getTopic(topicId);
   if (!topic) return false;
@@ -43,6 +57,15 @@ function checkTopicLearned(topicId: string) {
 export async function saveCode(exerciseId: string, code: string) {
   requireExercise(exerciseId);
   saveExerciseState({ ...stateOf(exerciseId), code });
+}
+
+const MAX_SKETCH = 5_000_000; // a scene with pasted images can be large; refuse anything absurd
+
+export async function saveSketch(exerciseId: string, scene: string) {
+  if (exerciseId !== GENERAL_SKETCH) requireExercise(exerciseId);
+  if (scene.length > MAX_SKETCH) throw new Error("This sketch is too large to save (over 5 MB). Remove pasted images.");
+  JSON.parse(scene); // store only well-formed scenes
+  saveSketchScene(exerciseId, scene);
 }
 
 export async function markPlanDone(exerciseId: string) {
@@ -63,8 +86,10 @@ export async function runExercise(exerciseId: string, code: string) {
   if (!state.plan_done_at) throw new Error("Write your plan with the Tutor first.");
   const language = currentLanguage(ex);
   const run = await runTests(code, ex.languages[language]!.test, language);
-  if (run.passed && !state.tests_passed_at) state = onTestsPassed(state, new Date().toISOString(), localToday());
+  const firstPass = run.passed && !state.tests_passed_at;
+  if (firstPass) state = onTestsPassed(state, new Date().toISOString(), localToday());
   saveExerciseState(state);
+  if (firstPass) refreshToday(true);
   const topicLearned = run.passed ? checkTopicLearned(ex.topicId) : false;
   revalidatePath("/");
   return { ...run, status: exerciseStatus(state, localToday()), topicLearned };
@@ -97,6 +122,7 @@ export async function finishExplaining(exerciseId: string): Promise<Grade & { to
   }
   const p = gradeExplainPrompt(ex, state.code, history);
   const { value, provider } = await jsonReply<Grade>(p.system, p.messages, gradeSchema);
+  for (const m of value.misconceptions) logMistake(ex.topicId, m, "explain-back");
   let saved = state;
   if (value.passed) {
     saved = { ...state, explain_passed_at: new Date().toISOString() };
@@ -121,7 +147,7 @@ export async function getReviewQuestion(topicId: string) {
   const thread = `review:${topicId}:${localToday()}`;
   const existing = getMessages(thread).find((m) => m.role === "tutor");
   if (existing) return existing.content;
-  const p = reviewQuestionPrompt(topic);
+  const p = reviewQuestionPrompt(topic, topicMistakes(topicId).map((m) => m.text));
   const { value, provider } = await jsonReply<{ question: string }>(p.system, p.messages, reviewQuestionSchema);
   addMessage(thread, "tutor", value.question, provider);
   return value.question;
@@ -140,10 +166,81 @@ export async function answerReview(topicId: string, answer: string) {
   const p = gradeReviewPrompt(topic, question, answer);
   const { value, provider } = await jsonReply<Grade>(p.system, p.messages, gradeSchema);
   addMessage(thread, "tutor", `**${value.passed ? "Passed" : "Not yet"}.** ${value.feedback}`, provider);
+  for (const m of value.misconceptions) logMistake(topicId, m, "spaced review");
   const next = reviewAfter(review, value.passed, today);
   saveReview(next);
+  refreshToday();
   revalidatePath("/");
   return { ...value, nextDue: next.due_date };
+}
+
+export async function generateExtraExercise(topicId: string) {
+  const topic = getTopic(topicId);
+  if (!topic) throw new Error(`Unknown topic ${topicId}`);
+  const chosen = getSetting("language", "typescript");
+  const result = await generateExtra(topicId, isLanguage(chosen) ? chosen : "typescript");
+  revalidatePath(`/topics/${topicId}`);
+  return result;
+}
+
+export async function editMistake(id: number, text: string) {
+  if (text.trim()) updateMistakeText(id, text);
+  else deleteMistake(id);
+  revalidatePath("/mistakes");
+}
+
+export async function removeMistake(id: number) {
+  deleteMistake(id);
+  revalidatePath("/mistakes");
+}
+
+export async function addMistake(formData: FormData) {
+  const text = String(formData.get("text") ?? "").trim();
+  const topic = String(formData.get("topic") ?? "").trim();
+  if (text) addMistakeManual(topic && getTopic(topic) ? topic : null, text);
+  revalidatePath("/mistakes");
+}
+
+export async function reviewProject(topicId: string, folder: string): Promise<ReviewResult & { topicLearned: boolean }> {
+  const topic = getTopic(topicId);
+  if (!topic) throw new Error(`Unknown topic ${topicId}`);
+  if (!needsProjectReview(topic)) throw new Error("This topic is checked with in-app exercises, not a project review.");
+  const project = collectProject(folder.trim());
+  const p = reviewPrompt(topic, project);
+  const { value } = await jsonReply<ReviewResult>(p.system, p.messages, reviewSchema);
+  addProjectReview(topicId, folder.trim(), value.passed, JSON.stringify(value));
+  for (const m of value.misconceptions) logMistake(topicId, m, "project review");
+  let topicLearned = false;
+  if (value.passed) {
+    markTopic(topicId, "practice_passed_at");
+    topicLearned = checkTopicLearned(topicId);
+  }
+  revalidatePath("/", "layout");
+  return { ...value, topicLearned };
+}
+
+export async function startInterview(kind: string) {
+  if (!isInterviewKind(kind)) throw new Error("Unknown interview type");
+  const language = getSetting("language", "typescript");
+  const id = createInterview(kind, isLanguage(language) ? language : "typescript");
+  redirect(`/interview/${id}`);
+}
+
+export async function saveInterviewDraft(id: number, code: string) {
+  const iv = getInterview(id);
+  if (iv && !iv.ended_at) saveInterviewCode(id, code);
+}
+
+export async function finishInterview(id: number): Promise<Feedback> {
+  const iv = getInterview(id);
+  if (!iv || !isInterviewKind(iv.kind)) throw new Error("Unknown interview");
+  if (iv.ended_at && iv.feedback) return JSON.parse(iv.feedback) as Feedback;
+  const p = feedbackPrompt(iv.kind, getMessages(`interview:${id}`), iv.code, loadCurriculum().topics);
+  const { value } = await jsonReply<Feedback>(p.system, p.messages, feedbackSchema);
+  for (const m of value.mistakes) logMistake(m.topicId && getTopic(m.topicId) ? m.topicId : null, m.text, "interview");
+  endInterview(id, JSON.stringify(value));
+  revalidatePath("/interview");
+  return value;
 }
 
 export async function setLanguage(language: string) {

@@ -41,6 +41,7 @@
     "node_modules",
     "curriculum",
     "spikes",
-    "scripts"
+    "scripts",
+    "data"
   ]
 }

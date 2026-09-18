@@ -152,6 +152,10 @@ export function getTopic(id: string) {
   return loadCurriculum().topics.find((t) => t.id === id);
 }
 
-export function getExercise(id: string) {
-  return loadCurriculum().exercises.get(id);
+export function getExercise(id: string): Exercise | undefined {
+  return loadCurriculum().exercises.get(id) ?? (id.startsWith("x-") ? getExtraLazy(id) : undefined);
 }
+
+// extras.ts imports this module, so resolve it lazily to avoid a cycle at load time
+import * as extrasModule from "./extras.ts";
+const getExtraLazy = (id: string) => extrasModule.getExtra(id);

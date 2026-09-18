@@ -3,8 +3,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Editor, { type OnMount } from "@monaco-editor/react";
+import dynamic from "next/dynamic";
 import { Chat, type ChatMessageView } from "./Chat";
 import { Markdown } from "./Markdown";
+import { OPEN_SKETCHPAD } from "./SketchpadLink";
 import { finishExplaining, markPlanDone, runExercise, saveCode, setLanguage, showNextHint, startRetry } from "@/app/actions";
 import { PLAN_READY, PLAN_STAGES } from "@/lib/tutor";
 import type { ExerciseStatus } from "@/lib/progress";
@@ -18,6 +20,7 @@ type Props = {
   nextExerciseId: string | null;
   initial: {
     code: string;
+    sketch: string | null;
     planDone: boolean;
     planText: string | null;
     planChat: ChatMessageView[];
@@ -29,6 +32,8 @@ type Props = {
     explainChat: ChatMessageView[];
   };
 };
+
+const SketchPad = dynamic(() => import("./SketchPad"), { ssr: false, loading: () => <p className="p-6 text-sm text-muted">Loading the sketchpad…</p> });
 
 // The Exercise is done in this order; each stage is its own screen.
 type Stage = "problem" | "plan" | "code" | "explain";
@@ -61,6 +66,9 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
   const [error, setError] = useState<string | null>(null);
   const [retryStarted, setRetryStarted] = useState(false);
   const [sideTab, setSideTab] = useState<SideTab>("tutor");
+  const [sketchOpen, setSketchOpen] = useState(false);
+  const [sketchMounted, setSketchMounted] = useState(false);
+  const openSketch = (open: boolean) => { setSketchOpen(open); if (open) setSketchMounted(true); };
   const [dark, setDark] = useState(false);
   const [stage, setStage] = useState<Stage>(
     initial.status === "needs_explain" ? "explain"
@@ -70,6 +78,12 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
   );
   useEffect(() => {
     setDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+  }, []);
+  // The sidebar's Sketchpad link toggles this exercise's sketchpad.
+  useEffect(() => {
+    const toggle = () => { setSketchMounted(true); setSketchOpen((o) => !o); };
+    window.addEventListener(OPEN_SKETCHPAD, toggle);
+    return () => window.removeEventListener(OPEN_SKETCHPAD, toggle);
   }, []);
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -215,10 +229,10 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
                 <li key={s.id} className="flex items-center gap-1">
                   {i > 0 && <span className="h-px w-5 bg-line" aria-hidden />}
                   <button
-                    onClick={() => setStage(s.id)}
+                    onClick={() => { setStage(s.id); openSketch(false); }}
                     disabled={!reachable[s.id]}
-                    aria-current={active ? "step" : undefined}
-                    className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active ? "bg-accent text-panel" : "text-muted hover:bg-ground hover:text-ink"}`}
+                    aria-current={active && !sketchOpen ? "step" : undefined}
+                    className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${active && !sketchOpen ? "bg-accent text-panel" : "text-muted hover:bg-ground hover:text-ink"}`}
                   >
                     <span className={`grid size-5 place-items-center rounded-full font-mono text-[11px] ${active ? "bg-panel text-accent" : "bg-line"}`}>{i + 1}</span>
                     {s.label}
@@ -228,12 +242,30 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
             })}
           </ol>
         </nav>
+        {sketchOpen && (
+          <button onClick={() => openSketch(false)} className="btn border-accent bg-accent-soft text-accent">
+            Back to {STAGES.find((s) => s.id === stage)?.label}
+          </button>
+        )}
       </header>
 
       {error && <p className="mx-6 mt-3 rounded bg-bad-soft px-3 py-2 text-sm" role="alert">{error}</p>}
 
+      {/* Sketchpad: independent of the stages; the problem stays in view */}
+      {sketchMounted && (
+        <section hidden={!sketchOpen} className="min-h-0 flex-1 p-4 lg:px-6">
+          <div className="grid h-full gap-4 lg:grid-cols-[minmax(260px,1fr)_minmax(0,3fr)]">
+            <aside className="panel min-h-0 overflow-y-auto p-5">
+              <p className="eyebrow mb-3">The problem</p>
+              <Markdown text={exercise.body} />
+            </aside>
+            <SketchPad exerciseId={exercise.id} initialScene={initial.sketch} />
+          </div>
+        </section>
+      )}
+
       {/* 1 · Problem: read it properly first */}
-      <section hidden={stage !== "problem"} className="min-h-0 flex-1 overflow-y-auto px-6 py-8">
+      <section hidden={sketchOpen || stage !== "problem"} className="min-h-0 flex-1 overflow-y-auto px-6 py-8">
         <div className="mx-auto grid max-w-3xl gap-6">
           <StatusLine status={status} retryDue={initial.retryDue} />
           <div className="panel p-8">
@@ -249,7 +281,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
       </section>
 
       {/* 2 · Plan: the problem stays in view beside the planning session */}
-      <section hidden={stage !== "plan"} className="min-h-0 flex-1 p-4 lg:px-6">
+      <section hidden={sketchOpen || stage !== "plan"} className="min-h-0 flex-1 p-4 lg:px-6">
         <div className="grid h-full gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <aside className="panel min-h-0 overflow-y-auto p-6">
             <p className="eyebrow mb-3">The problem</p>
@@ -291,7 +323,7 @@ export function Workspace({ exercise, topic, nextExerciseId, initial, language: 
       </section>
 
       {/* 3 · Code and 4 · Explain: big editor, Tutor in the sidebar */}
-      <section hidden={stage !== "code" && stage !== "explain"} className="min-h-0 flex-1 p-4 lg:px-6">
+      <section hidden={sketchOpen || (stage !== "code" && stage !== "explain")} className="min-h-0 flex-1 p-4 lg:px-6">
         <div className="grid h-full gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="flex min-h-0 flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">

@@ -8,6 +8,12 @@ import { threadFor } from "@/lib/tutor.ts";
 import { markTeachDone } from "@/app/actions.ts";
 import { Chat } from "@/components/Chat";
 import { dotClass } from "@/components/Sidebar";
+import { ExtraPractice } from "@/components/ExtraPractice";
+import { loadExtras } from "@/lib/extras.ts";
+import { projectReviews } from "@/lib/db.ts";
+import { needsProjectReview } from "@/lib/progress.ts";
+import { ProjectReviewPanel } from "@/components/ProjectReviewPanel";
+import type { ReviewResult } from "@/lib/projects.ts";
 
 export default async function TopicPage(props: PageProps<"/topics/[id]">) {
   await connection();
@@ -16,6 +22,7 @@ export default async function TopicPage(props: PageProps<"/topics/[id]">) {
   if (!topic) notFound();
   const taught = !!allTopicStates().get(id)?.teach_done_at;
   const states = allExerciseStates();
+  const extras = loadExtras(id).map((e) => ({ id: e.id, title: e.title, difficulty: e.difficulty, status: exerciseStatus(states.get(e.id), localToday()) }));
   const messages = getMessages(threadFor("teach", id)).map((m) => ({ role: m.role, content: m.content, provider: m.provider }));
 
   async function startExercises() {
@@ -73,6 +80,15 @@ export default async function TopicPage(props: PageProps<"/topics/[id]">) {
             </p>
           </form>
         </div>
+        {needsProjectReview(topic) ? (
+          <ProjectReviewPanel
+            topicId={id}
+            taught={taught}
+            history={projectReviews(id).map((r) => ({ id: r.id, folder: r.folder, when: r.created_at, result: JSON.parse(r.result) as ReviewResult }))}
+          />
+        ) : (
+          <ExtraPractice topicId={id} extras={extras} />
+        )}
       </aside>
     </main>
   );

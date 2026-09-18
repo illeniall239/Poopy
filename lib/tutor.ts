@@ -4,7 +4,7 @@ import type { ChatMessage } from "./llm.ts";
 import type { Message } from "./db.ts";
 import { localToday } from "./progress.ts";
 
-export type ChatKind = "teach" | "plan" | "exercise" | "explain" | "worked" | "recap";
+export type ChatKind = "teach" | "plan" | "exercise" | "explain" | "worked" | "recap" | "interview";
 export const threadFor = (kind: ChatKind, id: string) => `${kind}:${kind === "recap" ? localToday() : id}`;
 
 const SOCRATIC = `You are the Tutor in a personal programming-tutor app. The Learner is training to become a full-stack TypeScript developer and can write basic scripts but tends to freeze on a blank problem.
@@ -163,12 +163,12 @@ export function gradeExplainPrompt(ex: Exercise, code: string, history: Message[
 
 export const reviewQuestionSchema = { type: "object", properties: { question: { type: "string" } }, required: ["question"] };
 
-export function reviewQuestionPrompt(topic: Topic): Prompt {
+export function reviewQuestionPrompt(topic: Topic, mistakes: string[] = []): Prompt {
   return {
     system: `You write one Spaced Review question for a programming Learner. Never repeat a question word for word from earlier reviews; vary the angle.`,
     messages: [{
       role: "user",
-      content: `Topic ${topic.id}: ${topic.title}\nConcepts: ${topic.teach}\nMisconceptions: ${topic.probe}\n\nWrite ONE short question (Markdown) that checks whether the Learner still understands this Topic. Prefer: predict the output of a short snippet, explain why something happens, or spot the bug. It must be answerable in a few sentences without running code. Aim at one of the misconceptions.`,
+      content: `Topic ${topic.id}: ${topic.title}\nConcepts: ${topic.teach}\nMisconceptions: ${topic.probe}\n\nWrite ONE short question (Markdown) that checks whether the Learner still understands this Topic. Prefer: predict the output of a short snippet, explain why something happens, or spot the bug. It must be answerable in a few sentences without running code. Aim at one of the misconceptions.${mistakes.length ? `\n\nThis Learner's own logged mistakes on this Topic (prefer targeting one of these):\n${mistakes.map((m) => `- ${m}`).join("\n")}` : ""}`,
     }],
   };
 }

@@ -14,7 +14,7 @@ export type ExerciseState = {
   plan_text?: string | null; // the Learner's final plan, shown beside the editor
 };
 
-export type TopicState = { topic_id: string; teach_done_at: string | null; learned_at: string | null };
+export type TopicState = { topic_id: string; teach_done_at: string | null; learned_at: string | null; practice_passed_at?: string | null };
 export type Review = { topic_id: string; due_date: string; step: number; last_done: string | null };
 
 export type ExerciseStatus = "new" | "in_progress" | "needs_explain" | "waiting_retry" | "retry_due" | "done";
@@ -57,9 +57,29 @@ export function startRetry(s: ExerciseState, starter: string): ExerciseState {
   return { ...s, code: starter, hints_shown: 0, worked_example: 0, tests_passed_at: null, clean_pass: 0, plan_done_at: null, plan_text: null };
 }
 
+// A Topic with in-app Exercises is Learned when they're all done; a Topic practised in the Learner's own project
+// (Phases 3+) is Learned when a Project Review of that practice passes.
+export const needsProjectReview = (topic: Topic) => topic.exerciseIds.length === 0 && !!topic.practice;
+
 export function isTopicLearned(topic: Topic, topicState: TopicState | undefined, states: Map<string, ExerciseState>, today: string) {
-  return !!topicState?.teach_done_at && topic.exerciseIds.every((id) => exerciseStatus(states.get(id), today) === "done");
+  if (!topicState?.teach_done_at) return false;
+  if (needsProjectReview(topic)) return !!topicState.practice_passed_at;
+  return topic.exerciseIds.every((id) => exerciseStatus(states.get(id), today) === "done");
 }
+
+// Streak: consecutive kept days ending today (or yesterday, while today is still in progress).
+export function currentStreak(keptDays: Set<string>, today: string): number {
+  let day = keptDays.has(today) ? today : addDays(today, -1);
+  let streak = 0;
+  while (keptDays.has(day)) {
+    streak++;
+    day = addDays(day, -1);
+  }
+  return streak;
+}
+
+// A day is kept when an Exercise was passed and no Spaced Review due that day is left undone.
+export const isDayKept = (exercisePassed: boolean, reviewsStillDue: number) => exercisePassed && reviewsStillDue === 0;
 
 export function reviewAfter(review: Review, passed: boolean, today: string): Review {
   const step = passed ? Math.min(review.step + 1, REVIEW_INTERVALS.length - 1) : 0;
@@ -74,7 +94,8 @@ export type PlanItem =
   | { kind: "review"; topicId: string }
   | { kind: "retry"; exerciseId: string }
   | { kind: "teach"; topicId: string }
-  | { kind: "exercise"; exerciseId: string; status: ExerciseStatus };
+  | { kind: "exercise"; exerciseId: string; status: ExerciseStatus }
+  | { kind: "practice"; topicId: string };
 
 // The fixed daily loop: due Spaced Reviews → due retries → the current Topic (teach, then its Exercises).
 // The "current Topic" is the first one not Learned that still has something to do today; a Topic whose
@@ -96,6 +117,10 @@ export function planToday(
     if (isTopicLearned(t, topicStates.get(t.id), exerciseStates, today)) continue;
     if (!topicStates.get(t.id)?.teach_done_at) {
       plan.push({ kind: "teach", topicId: t.id });
+      break;
+    }
+    if (needsProjectReview(t)) {
+      plan.push({ kind: "practice", topicId: t.id });
       break;
     }
     const open = t.exerciseIds

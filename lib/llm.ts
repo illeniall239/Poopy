@@ -117,6 +117,7 @@ async function ollamaFetch(system: string, messages: ChatMessage[], extra: objec
       model: setting("ollamaModel"),
       think: false,
       keep_alive: "30m",
+      options: { num_ctx: 32768 },
       messages: [{ role: "system", content: system }, ...messages],
       ...extra,
     }),

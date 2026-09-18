@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { getExercise, getTopic } from "@/lib/curriculum.ts";
 import { LANGUAGES, currentLanguage, type Language } from "@/lib/languages.ts";
-import { getExerciseState, getMessages } from "@/lib/db.ts";
+import { getExerciseState, getMessages, getSketch } from "@/lib/db.ts";
 import { exerciseStatus, localToday } from "@/lib/progress.ts";
 import { threadFor, type ChatKind } from "@/lib/tutor.ts";
 import { Workspace } from "@/components/Workspace";
@@ -20,7 +20,7 @@ export default async function ExercisePage(props: PageProps<"/exercises/[id]">) 
   const languageOptions = (Object.keys(ex.languages) as Language[]).map((l) => ({ id: l, label: LANGUAGES[l].label, note: LANGUAGES[l].note, editorFile: LANGUAGES[l].editorFile, monaco: LANGUAGES[l].monaco }));
   const thread = (kind: ChatKind) => getMessages(threadFor(kind, id)).map((m) => ({ role: m.role, content: m.content, provider: m.provider }));
   const siblings = topic.exerciseIds;
-  const next = siblings[siblings.indexOf(id) + 1];
+  const next = siblings.includes(id) ? siblings[siblings.indexOf(id) + 1] : undefined; // extras have no "next"
 
   return (
     <Workspace
@@ -31,6 +31,7 @@ export default async function ExercisePage(props: PageProps<"/exercises/[id]">) 
       nextExerciseId={next ?? null}
       initial={{
         code: state?.code ?? starter,
+        sketch: getSketch(id),
         planDone: !!state?.plan_done_at,
         planText: state?.plan_text ?? null,
         planChat: thread("plan"),

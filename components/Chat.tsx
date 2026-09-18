@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Markdown } from "./Markdown";
+import { MicButton } from "./MicButton";
 import type { ChatKind, RunInfo } from "@/lib/tutor";
 
 export type ChatMessageView = { role: "learner" | "tutor"; content: string; provider?: string | null };
@@ -116,6 +117,7 @@ export function Chat({ kind, id, initial, autoStart = false, placeholder = "Repl
           rows={2}
           className="field flex-1 resize-none"
         />
+        <MicButton onText={(t) => setDraft((d) => (d.trim() ? `${d.trimEnd()} ${t}` : t))} />
         <button type="submit" disabled={busy || !draft.trim()} className="btn btn-primary self-end">Send</button>
       </form>
     </div>

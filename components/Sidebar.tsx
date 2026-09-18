@@ -1,17 +1,11 @@
 import { loadCurriculum } from "@/lib/curriculum.ts";
-import { allExerciseStates, allTopicStates } from "@/lib/db.ts";
-import { exerciseStatus, isTopicLearned, localToday, type ExerciseStatus } from "@/lib/progress.ts";
+import { allDays, allExerciseStates, allTopicStates } from "@/lib/db.ts";
+import { currentStreak, exerciseStatus, isTopicLearned, localToday } from "@/lib/progress.ts";
+import { dotClass } from "@/lib/status-ui.ts";
+export { dotClass };
 import { NavLink, TopicLink } from "./NavLink";
 import { SidebarToggle } from "./SidebarToggle";
-
-export const dotClass: Record<ExerciseStatus, string> = {
-  new: "bg-line",
-  in_progress: "bg-warn",
-  needs_explain: "bg-warn",
-  waiting_retry: "bg-muted",
-  retry_due: "bg-bad",
-  done: "bg-accent",
-};
+import { SketchpadLink } from "./SketchpadLink";
 
 export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const today = localToday();
@@ -21,6 +15,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
   const learned = topics.filter((t) => isTopicLearned(t, topicStates.get(t.id), states, today)).length;
   const done = [...exercises.keys()].filter((id) => exerciseStatus(states.get(id), today) === "done").length;
   const current = topics.find((t) => !isTopicLearned(t, topicStates.get(t.id), states, today));
+  const streak = currentStreak(new Set(allDays().filter((d) => d.kept).map((d) => d.date)), today);
 
   if (collapsed) {
     return (
@@ -31,6 +26,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
           <div className="w-full rounded-full bg-accent" style={{ height: `${(done / exercises.size) * 100}%` }} />
         </div>
         {current && <span className="font-mono text-xs font-bold text-accent" title={`Current topic: ${current.title}`}>{current.id}</span>}
+        <span className="font-mono text-xs text-warn" title={`${streak}-day streak`}>{streak}d</span>
       </aside>
     );
   }
@@ -49,10 +45,14 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean }) {
         <NavLink href="/">Today</NavLink>
         <NavLink href="/topics">All topics</NavLink>
         <NavLink href="/recap">Recap</NavLink>
+        <NavLink href="/interview">Interview practice</NavLink>
+        <NavLink href="/mistakes">Mistake log</NavLink>
+        <SketchpadLink />
         <NavLink href="/settings">Settings</NavLink>
       </nav>
 
       <div className="grid gap-2 px-3">
+        <p className="font-mono text-xs text-warn">{streak}-day streak</p>
         <div className="flex justify-between font-mono text-xs text-muted">
           <span>{learned}/{topics.length} topics</span>
           <span>{done}/{exercises.size} exercises</span>
